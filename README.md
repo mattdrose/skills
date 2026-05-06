@@ -42,5 +42,6 @@ Skill: `skills/stoudemire/SKILL.md`
 ## Installation
 
 ```bash
-npx skills add mattdrose/skills
+npx skills add mattdrose/skills --skill nash
+npx skills add mattdrose/skills --skill stoudemire
 ```
