@@ -11,7 +11,7 @@ Inspired by [obra/superpowers](https://github.com/obra/superpowers). Two workflo
 | Workflow | When to use | Skills |
 |----------|-------------|--------|
 | **nash → stoudemire** | Complex tasks that need a full plan | Brainstorm, plan, then execute with reviewed subagents |
-| **chuck** | Simpler tasks that just need quick clarification | Clarify, approve, implement in one shot |
+| **chuck** | Simpler tasks that are clear or need quick clarification | Implement immediately if clear; clarify and approve if needed |
 
 ---
 
@@ -37,14 +37,14 @@ Skills: `skills/nash/SKILL.md` · `skills/stoudemire/SKILL.md`
 
 ### `chuck` — clarify and implement
 
-For simpler work: clear scope, handful of files, just needs a few questions before diving in.
+For simpler work: clear scope, handful of files, with optional quick clarification before diving in.
 
 - Asks 1-3 targeted questions (or skips if clear)
-- Proposes one approach and asks for approval
-- Dispatches a fresh implementer subagent
+- If clear, dispatches a fresh implementer subagent immediately
+- If clarification was needed, proposes one approach and asks for approval
 - No plan file, no multi-reviewer pipeline
 
-Flow: `chuck` → you approve the approach → implementer runs → you review the diff and commit
+Flow: `chuck` → implementer runs immediately if clear; otherwise you approve the approach first → you review the diff and commit
 
 Skill: `skills/chuck/SKILL.md`
 

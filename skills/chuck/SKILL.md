@@ -1,23 +1,22 @@
 ---
 name: chuck
-description: Use for tasks that need brief clarification before implementation but don't warrant a full plan. Asks 1-3 questions, proposes an approach, then dispatches an implementer subagent. No plan file — lighter and faster than nash + stoudemire.
+description: Use for tasks that may need brief clarification before implementation but don't warrant a full plan. If clear, dispatches an implementer immediately; if unclear, asks 1-3 questions, proposes an approach, gets approval, then dispatches. No plan file — lighter and faster than nash + stoudemire.
 ---
 
 # Chuck: Clarify and Implement
 
-Lightweight collaborative skill for tasks that benefit from brief clarification before implementation. No plan file — chuck asks a few questions, proposes an approach, gets approval, and dispatches an implementer.
+Lightweight collaborative skill for tasks that may benefit from brief clarification before implementation. No plan file — chuck dispatches immediately when the task is clear; when clarification is needed, it asks a few questions, proposes an approach, gets approval, and dispatches an implementer.
 
 <HARD-GATE>
 Do NOT start implementing until you have:
 1. Asked your clarifying questions (or determined none are needed)
-2. Proposed an approach
-3. Received user approval to proceed
+2. If clarification was needed: proposed an approach and received user approval to proceed
 </HARD-GATE>
 
 ## When to Use
 
 Use chuck when:
-- The task needs brief clarification but not a full plan
+- The task is clear or needs brief clarification, but not a full plan
 - You could implement it in one focused session
 - It touches a handful of files with a clear scope
 
@@ -32,7 +31,7 @@ Create a TodoWrite task for each item and complete them in order:
 
 1. **Quick context check** — glance at relevant files/structure
 2. **Clarify** — ask 1-3 questions (only if genuinely unclear)
-3. **Propose approach** — present one recommendation, get approval
+3. **Propose approach** — present one recommendation and get approval (only after clarification)
 4. **Dispatch implementer** — fresh subagent with full task context
 5. **Handle result** — report back to user
 
@@ -41,6 +40,7 @@ Create a TodoWrite task for each item and complete them in order:
 ```dot
 digraph chuck {
     "Quick context check" [shape=box];
+    "Clarification needed?" [shape=diamond];
     "Clarify (1-3 questions)" [shape=box];
     "Propose approach" [shape=box];
     "User approves?" [shape=diamond];
@@ -48,7 +48,9 @@ digraph chuck {
     "Handle result" [shape=box];
     "Report to user" [shape=doublecircle];
 
-    "Quick context check" -> "Clarify (1-3 questions)";
+    "Quick context check" -> "Clarification needed?";
+    "Clarification needed?" -> "Dispatch implementer subagent" [label="no"];
+    "Clarification needed?" -> "Clarify (1-3 questions)" [label="yes"];
     "Clarify (1-3 questions)" -> "Propose approach";
     "Propose approach" -> "User approves?";
     "User approves?" -> "Propose approach" [label="no, revise"];
@@ -79,6 +81,8 @@ Ask **1-3 questions** to fill genuine gaps. Rules:
 
 ### Phase 3: Propose Approach
 
+Only do this phase when you asked clarifying questions.
+
 Present **one recommended approach** in a few sentences:
 - What you'll build/change
 - Which files you'll touch
@@ -89,7 +93,7 @@ Ask: "Does this look good?" Wait for approval before proceeding.
 ### Phase 4: Dispatch Implementer
 
 Launch a fresh subagent with:
-- The synthesized task description (from your clarification conversation)
+- The synthesized task description (from the request and any clarification conversation)
 - Relevant context (file paths, patterns, dependencies)
 - The no-commit rule
 - Self-review instructions
@@ -140,7 +144,7 @@ Task tool (general-purpose):
     ## Task
 
     [Synthesized task description — what to build/change, acceptance criteria,
-    files to touch. Write this fresh from your clarification conversation.]
+    files to touch. Write this fresh from the request and any clarification conversation.]
 
     ## Context
 
@@ -196,8 +200,8 @@ Task tool (general-purpose):
 ## Key Principles
 
 - **Speed over ceremony** — no plan file, no multi-reviewer pipeline
-- **Just enough clarification** — 1-3 questions max, skip if clear
-- **One approach** — propose your best recommendation, not a menu
+- **Just enough clarification** — 1-3 questions max, skip clarification and approval if clear
+- **One approach when needed** — after clarification, propose your best recommendation, not a menu
 - **Fresh subagent** — isolate implementation context from clarification context
 - **No commits** — human owns the commit history
 - **Soft scope guard** — flag when something's too big, but don't block
