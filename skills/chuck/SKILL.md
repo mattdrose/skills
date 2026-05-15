@@ -1,11 +1,11 @@
 ---
 name: chuck
-description: Use for tasks that may need brief clarification before implementation but don't warrant a full plan. If clear, dispatches an implementer immediately; if unclear, asks 1-3 questions, proposes an approach, gets approval, then dispatches. No plan file — lighter and faster than nash + stoudemire.
+description: Use for tasks that may need brief clarification before implementation but don't warrant a full plan. Default to asking 1-3 clarifying questions before implementation unless the request is truly mechanical and unambiguous. After clarification, propose an approach, get approval, then dispatch. No plan file — lighter and faster than nash + stoudemire.
 ---
 
 # Chuck: Clarify and Implement
 
-Lightweight collaborative skill for tasks that may benefit from brief clarification before implementation. No plan file — chuck dispatches immediately when the task is clear; when clarification is needed, it asks a few questions, proposes an approach, gets approval, and dispatches an implementer.
+Lightweight collaborative skill for tasks that benefit from brief clarification before implementation. No plan file — chuck is intentionally biased toward pausing for 1-3 quick questions, then proposing an approach, getting approval, and dispatching an implementer. It should dispatch immediately only for truly mechanical, unambiguous tasks.
 
 <HARD-GATE>
 Do NOT start implementing until you have:
@@ -30,8 +30,8 @@ Use nash + stoudemire instead when:
 Create a TodoWrite task for each item and complete them in order:
 
 1. **Quick context check** — glance at relevant files/structure
-2. **Clarify** — ask 1-3 questions (only if genuinely unclear)
-3. **Propose approach** — present one recommendation and get approval (only after clarification)
+2. **Clarify** — ask 1-3 questions by default; skip only when the request is truly mechanical and unambiguous
+3. **Propose approach** — present one recommendation and get approval whenever you asked questions or made meaningful assumptions
 4. **Dispatch implementer** — fresh subagent with full task context
 5. **Handle result** — report back to user
 
@@ -73,15 +73,27 @@ Keep this fast — 30 seconds of exploration, not 5 minutes of archaeology.
 
 ### Phase 2: Clarify
 
-Ask **1-3 questions** to fill genuine gaps. Rules:
+Ask **1-3 questions by default**. Chuck exists because small implementation tasks often hide preference decisions; a 30-second clarification is cheaper than implementing the wrong thing.
+
+Skip clarification only when the request is truly mechanical and unambiguous, such as a precise rename, a specific one-line config change, or an exact bug fix with clear expected behavior. If you are relying on a preference, guessing between multiple reasonable UX/API choices, or assuming scope, ask.
+
+Rules:
 - Prefer multiple-choice questions (easier for the user to answer quickly)
-- Only ask what you actually need to know to implement well
-- If everything is clear from context, skip this phase entirely and say so
+- Ask about decisions that would change the implementation, user experience, API shape, test strategy, or scope
+- Do not ask questions whose answers would not affect your implementation
+- If you skip this phase, explicitly state why the task is unambiguous before dispatching
 - Hard cap: 3 questions. If you need more, the task might be too big (see scope guard below)
+
+Good clarification targets:
+- Desired UX/behavior when there are multiple reasonable options
+- Scope boundaries: minimal fix vs broader cleanup, which platforms/routes/files are included
+- Compatibility or migration expectations
+- Acceptance criteria and testing expectations
+- Naming, copy, visual treatment, or API shape when not already established
 
 ### Phase 3: Propose Approach
 
-Only do this phase when you asked clarifying questions.
+Do this phase whenever you asked clarifying questions or when your implementation depends on meaningful assumptions. If you truly skipped clarification because the task was mechanical and unambiguous, you may dispatch directly.
 
 Present **one recommended approach** in a few sentences:
 - What you'll build/change
@@ -200,7 +212,7 @@ Task tool (general-purpose):
 ## Key Principles
 
 - **Speed over ceremony** — no plan file, no multi-reviewer pipeline
-- **Just enough clarification** — 1-3 questions max, skip clarification and approval if clear
+- **Clarification bias** — ask 1-3 questions by default; skip only for truly mechanical, unambiguous work
 - **One approach when needed** — after clarification, propose your best recommendation, not a menu
 - **Fresh subagent** — isolate implementation context from clarification context
 - **No commits** — human owns the commit history
