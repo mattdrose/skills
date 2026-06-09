@@ -1,11 +1,11 @@
 ---
 name: chuck
-description: Use for tasks that may need brief clarification before implementation but don't warrant a full plan. Default to asking 1-3 clarifying questions before implementation unless the request is truly mechanical and unambiguous. After clarification, propose an approach, get approval, then dispatch. No plan file — lighter and faster than nash + stoudemire.
+description: Use for tasks that may need brief clarification before implementation but don't warrant a full plan. Default to asking up to 3 clarifying questions one at a time before implementation unless the request is truly mechanical and unambiguous. After clarification, propose an approach, get approval, then dispatch. No plan file — lighter and faster than nash + stoudemire.
 ---
 
 # Chuck: Clarify and Implement
 
-Lightweight collaborative skill for tasks that benefit from brief clarification before implementation. No plan file — chuck is intentionally biased toward pausing for 1-3 quick questions, then proposing an approach, getting approval, and dispatching an implementer. It should dispatch immediately only for truly mechanical, unambiguous tasks.
+Lightweight collaborative skill for tasks that benefit from brief clarification before implementation. No plan file — chuck is intentionally biased toward pausing for up to 3 quick questions asked one at a time, then proposing an approach, getting approval, and dispatching an implementer. It should dispatch immediately only for truly mechanical, unambiguous tasks.
 
 <HARD-GATE>
 Do NOT start implementing until you have:
@@ -30,7 +30,7 @@ Use nash + stoudemire instead when:
 Create a TodoWrite task for each item and complete them in order:
 
 1. **Quick context check** — glance at relevant files/structure
-2. **Clarify** — ask 1-3 questions by default; skip only when the request is truly mechanical and unambiguous
+2. **Clarify** — ask up to 3 questions by default, one at a time; skip only when the request is truly mechanical and unambiguous
 3. **Propose approach** — present one recommendation and get approval whenever you asked questions or made meaningful assumptions
 4. **Dispatch implementer** — fresh subagent with full task context
 5. **Handle result** — report back to user
@@ -41,7 +41,7 @@ Create a TodoWrite task for each item and complete them in order:
 digraph chuck {
     "Quick context check" [shape=box];
     "Clarification needed?" [shape=diamond];
-    "Clarify (1-3 questions)" [shape=box];
+    "Clarify (up to 3 questions, one at a time)" [shape=box];
     "Propose approach" [shape=box];
     "User approves?" [shape=diamond];
     "Dispatch implementer subagent" [shape=box];
@@ -50,8 +50,8 @@ digraph chuck {
 
     "Quick context check" -> "Clarification needed?";
     "Clarification needed?" -> "Dispatch implementer subagent" [label="no"];
-    "Clarification needed?" -> "Clarify (1-3 questions)" [label="yes"];
-    "Clarify (1-3 questions)" -> "Propose approach";
+    "Clarification needed?" -> "Clarify (up to 3 questions, one at a time)" [label="yes"];
+    "Clarify (up to 3 questions, one at a time)" -> "Propose approach";
     "Propose approach" -> "User approves?";
     "User approves?" -> "Propose approach" [label="no, revise"];
     "User approves?" -> "Dispatch implementer subagent" [label="yes"];
@@ -73,12 +73,14 @@ Keep this fast — 30 seconds of exploration, not 5 minutes of archaeology.
 
 ### Phase 2: Clarify
 
-Ask **1-3 questions by default**. Chuck exists because small implementation tasks often hide preference decisions; a 30-second clarification is cheaper than implementing the wrong thing.
+Ask **up to 3 questions by default, one at a time**. Chuck exists because small implementation tasks often hide preference decisions; a 30-second clarification is cheaper than implementing the wrong thing.
 
 Skip clarification only when the request is truly mechanical and unambiguous, such as a precise rename, a specific one-line config change, or an exact bug fix with clear expected behavior. If you are relying on a preference, guessing between multiple reasonable UX/API choices, or assuming scope, ask.
 
 Rules:
-- Prefer multiple-choice questions (easier for the user to answer quickly)
+- Ask questions **one at a time**
+- One question per message — if a topic needs more exploration, break it into multiple questions
+- Prefer multiple-choice questions (easier for the user to answer quickly); open-ended is fine too
 - Ask about decisions that would change the implementation, user experience, API shape, test strategy, or scope
 - Do not ask questions whose answers would not affect your implementation
 - If you skip this phase, explicitly state why the task is unambiguous before dispatching
@@ -212,7 +214,7 @@ Task tool (general-purpose):
 ## Key Principles
 
 - **Speed over ceremony** — no plan file, no multi-reviewer pipeline
-- **Clarification bias** — ask 1-3 questions by default; skip only for truly mechanical, unambiguous work
+- **Clarification bias** — ask up to 3 questions by default, one at a time; skip only for truly mechanical, unambiguous work
 - **One approach when needed** — after clarification, propose your best recommendation, not a menu
 - **Fresh subagent** — isolate implementation context from clarification context
 - **No commits** — human owns the commit history
