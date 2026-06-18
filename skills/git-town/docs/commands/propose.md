@@ -1,0 +1,100 @@
+# git town propose
+
+<a type="git-town-command" />
+
+```command-summary
+git town propose [--(no)-auto-resolve] [(-b | --body) <text>] [(-f | --body-file) <path>] [--browser <executable> | --no-browser] [--dry-run] [-h | --help] [--(non)-interactive] [-s | --stack] [(-t | --title) <text>] [-v | --verbose]
+```
+
+The _propose_ command helps create a new pull request
+(also known as merge request) for the current feature branch.
+It opens your forge's website to create a new proposal in your browser
+and pre-populates information like branch and source/target repository.
+It also [syncs](sync.md) the branch to merge
+before opening the pull request in [detached](sync.md#-d--detached--no-detached)
+mode.
+
+Proposing prototype and parked branches makes them feature branches.
+
+You can create pull requests for repositories hosted on:
+
+- [Bitbucket](https://bitbucket.org)
+- [Forgejo](https://forgejo.org)
+- [Gitea](https://gitea.com)
+- [GitHub](https://github.com)
+- [GitLab](https://gitlab.com)
+
+You can configure the browser
+which Git Town opens using the
+[BROWSER environment variable](../preferences/browser.md).
+
+## Options
+
+#### `--auto-resolve`<br>`--no-auto-resolve`
+
+Disables automatic resolution of
+[phantom merge conflicts](../stacked-changes.md#avoid-phantom-conflicts).
+
+#### `-b <text>`<br>`--body <text>`
+
+Pre-populate the body of the pull request with the given text.
+
+#### `-f <path>`<br>`--body-file <path>`
+
+When called with the `--body-file` aka `-f` flag,
+it pre-populates the body of the pull request with the content of the given
+file.
+The filename `-` reads the body text from STDIN.
+
+#### `--browser <executable>`<br>`--no-browser`
+
+Calls the given browser executable instead of the default system browser.
+
+Set to `(none)` or an empty string to disable the browser.
+
+#### `--dry-run`
+
+Use the `--dry-run` flag to test-drive this command.
+It prints the Git commands that would be run but doesn't execute them.
+
+#### `-h`<br>`--help`
+
+Display help for this command.
+
+#### `--interactive`<br>`--non-interactive`
+
+Enables or disables [interactive](../preferences/interactive.md) dialogs.
+
+#### `-s`<br>`--stack`
+
+The `--stack` aka `-s` parameter creates proposals for all branches of the stack
+that the current branch belongs to.
+
+#### `-t <text>`<br>`--title <text>`
+
+When called with the `--title <title>` aka `-t` flag,
+the _propose_ command pre-populate the title of the pull request to the given
+text.
+
+#### `-v`<br>`--verbose`
+
+The `--verbose` aka `-v` flag prints all Git commands run under the hood to
+determine the repository state.
+
+## Configuration
+
+You can configure the forge type with the
+[hosting-platform](../preferences/forge-type.md) setting.
+
+When using SSH identities,
+this command uses the hostname in the
+[hosting-origin-hostname](../preferences/hosting-origin-hostname.md) setting.
+
+## See also
+
+<!-- keep-sorted start -->
+
+- [repo](repo.md) opens the website for the repository in the browser
+- [ship](ship.md) ships the current branch
+
+<!-- keep-sorted end -->
