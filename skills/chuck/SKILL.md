@@ -5,7 +5,7 @@ description: Use for tasks that may need brief clarification before implementati
 
 # Chuck: Clarify and Implement
 
-Lightweight collaborative skill for tasks that benefit from brief clarification before implementation. No plan file — chuck is intentionally biased toward pausing for up to 3 quick questions asked one at a time, then proposing an approach, getting approval, and dispatching an implementer. It should dispatch immediately only for truly mechanical, unambiguous tasks.
+Lightweight collaborative skill for tasks that benefit from brief clarification before implementation. No plan file — chuck is intentionally biased toward pausing for up to 3 quick questions asked one at a time, then proposing an approach, getting approval, dispatching an implementer, and dispatching a separate subagent to review the result. It should dispatch immediately only for truly mechanical, unambiguous tasks.
 
 <HARD-GATE>
 Do NOT start implementing until you have:
@@ -33,7 +33,8 @@ Create a TodoWrite task for each item and complete them in order:
 2. **Clarify** — ask up to 3 questions by default, one at a time; skip only when the request is truly mechanical and unambiguous
 3. **Propose approach** — present one recommendation and get approval whenever you asked questions or made meaningful assumptions
 4. **Dispatch implementer** — fresh subagent with full task context
-5. **Handle result** — report back to user
+5. **Dispatch reviewer** — fresh subagent that reviews the implementer's work
+6. **Handle result** — report back to user
 
 ## Process Flow
 
@@ -45,6 +46,7 @@ digraph chuck {
     "Propose approach" [shape=box];
     "User approves?" [shape=diamond];
     "Dispatch implementer subagent" [shape=box];
+    "Dispatch reviewer subagent" [shape=box];
     "Handle result" [shape=box];
     "Report to user" [shape=doublecircle];
 
@@ -55,7 +57,8 @@ digraph chuck {
     "Propose approach" -> "User approves?";
     "User approves?" -> "Propose approach" [label="no, revise"];
     "User approves?" -> "Dispatch implementer subagent" [label="yes"];
-    "Dispatch implementer subagent" -> "Handle result";
+    "Dispatch implementer subagent" -> "Dispatch reviewer subagent";
+    "Dispatch reviewer subagent" -> "Handle result";
     "Handle result" -> "Report to user";
 }
 ```
@@ -110,11 +113,26 @@ Launch a fresh subagent with:
 - The synthesized task description (from the request and any clarification conversation)
 - Relevant context (file paths, patterns, dependencies)
 - The no-commit rule
-- Self-review instructions
 
 Use the implementer prompt template below.
 
-### Phase 5: Handle Result
+### Phase 5: Dispatch Reviewer
+
+After the implementer reports DONE (or DONE_WITH_CONCERNS), launch a **separate fresh subagent** to review the work. Do not reuse the implementer subagent — a fresh reviewer with no attachment to the implementation catches more issues.
+
+Give the reviewer:
+- The synthesized task description and acceptance criteria
+- The diff to review (`git diff HEAD`)
+- Relevant context (file paths, patterns the code should follow)
+- The no-commit rule
+
+Use the reviewer prompt template below.
+
+Based on the reviewer's verdict:
+- **APPROVED** → proceed to Handle Result
+- **CHANGES_REQUESTED** → re-dispatch the implementer with the reviewer's findings, then review again. Repeat until approved or escalate to the user if the loop isn't converging.
+
+### Phase 6: Handle Result
 
 Based on the implementer's status:
 - **DONE** → run `git diff --stat HEAD`, report summary to user
@@ -185,20 +203,10 @@ Task tool (general-purpose):
     2. Write tests if applicable
     3. Verify implementation works (run tests, check for errors)
     4. Do NOT commit — leave changes in the working tree
-    5. Self-review (see below)
-    6. Report back
+    5. Report back
 
-    ## Self-Review
-
-    Before reporting, check your work:
-
-    **Completeness:** Did I implement everything described? Missing requirements?
-    **Quality:** Clean, maintainable code? Clear names?
-    **Discipline:** Only built what was requested? Followed existing patterns?
-    **Testing:** Tests verify behavior (not mocks)? Comprehensive?
-    **No-commit check:** `git log` shows no new commits from this session.
-
-    Fix any issues found during self-review before reporting.
+    A separate reviewer subagent will review your work, so make sure the
+    implementation is complete and verifiable before reporting.
 
     ## Report Format
 
@@ -206,8 +214,53 @@ Task tool (general-purpose):
     - What you implemented
     - Files changed (`git diff --stat HEAD`)
     - Test results (if applicable)
-    - Self-review findings (if any)
     - Concerns or blockers (if any)
+```
+````
+
+## Reviewer Prompt Template
+
+Use this when dispatching the reviewer subagent (after the implementer reports back):
+
+````
+```
+Task tool (general-purpose):
+  description: "Review: [short task name]"
+  prompt: |
+    You are reviewing an implementation produced by another subagent. You did NOT
+    write this code, so review it critically and independently.
+
+    ## Task That Was Implemented
+
+    [Synthesized task description — what was supposed to be built/changed,
+    acceptance criteria, files that should have been touched.]
+
+    ## Context
+
+    [Relevant context: file paths, existing patterns the code should follow,
+    dependencies.]
+
+    ## What To Review
+
+    Inspect the changes with `git diff HEAD` (do not rely on a summary). Check:
+
+    **Completeness:** Was everything described actually implemented? Missing requirements?
+    **Correctness:** Does the code do what it claims? Any bugs, edge cases, or regressions?
+    **Quality:** Clean, maintainable code? Clear names? No dead code or debug leftovers?
+    **Discipline:** Only what was requested? Followed existing patterns? No scope creep?
+    **Testing:** Do tests exist where applicable and verify real behavior (not mocks)?
+
+    ## CRITICAL: Do Not Commit Or Modify
+
+    You are a reviewer. Do NOT edit files, and do NOT run `git commit`, `git add`
+    followed by commit, or `git commit --amend`. Only inspect and report.
+
+    ## Report Format
+
+    - **Verdict:** APPROVED | CHANGES_REQUESTED
+    - Summary of what the implementation does
+    - Findings, ordered by severity (blocking issues first, then nits)
+    - For each finding: file/location, what's wrong, and a suggested fix
 ```
 ````
 
@@ -216,6 +269,6 @@ Task tool (general-purpose):
 - **Speed over ceremony** — no plan file, no multi-reviewer pipeline
 - **Clarification bias** — ask up to 3 questions by default, one at a time; skip only for truly mechanical, unambiguous work
 - **One approach when needed** — after clarification, propose your best recommendation, not a menu
-- **Fresh subagent** — isolate implementation context from clarification context
+- **Fresh subagents** — isolate implementation context from clarification context, and review with a separate subagent that didn't write the code
 - **No commits** — human owns the commit history
 - **Soft scope guard** — flag when something's too big, but don't block

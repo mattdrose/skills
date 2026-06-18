@@ -24,7 +24,7 @@ Create a TodoWrite task for each item and complete them in order:
 3. **Propose 2-3 approaches** — with trade-offs and your recommendation
 4. **Present design** — in sections scaled to complexity, get user approval
 5. **Write plan document** — save to `plans/YYYY-MM-DD-<topic>-plan.md`
-6. **Self-review the plan** — fix placeholders, contradictions, ambiguity, scope, type consistency
+6. **Dispatch subagent to review the plan** — checks placeholders, contradictions, ambiguity, scope, type consistency; fix the issues it reports
 7. **User reviews the plan** — wait for approval before handing off
 
 ## Process Flow
@@ -37,7 +37,8 @@ digraph nash {
     "Present design sections" [shape=box];
     "User approves design?" [shape=diamond];
     "Write plan document" [shape=box];
-    "Self-review (fix inline)" [shape=box];
+    "Dispatch review subagent" [shape=box];
+    "Fix reported issues" [shape=box];
     "User reviews plan?" [shape=diamond];
     "Hand off to stoudemire" [shape=doublecircle];
 
@@ -47,8 +48,9 @@ digraph nash {
     "Present design sections" -> "User approves design?";
     "User approves design?" -> "Present design sections" [label="no, revise"];
     "User approves design?" -> "Write plan document" [label="yes"];
-    "Write plan document" -> "Self-review (fix inline)";
-    "Self-review (fix inline)" -> "User reviews plan?";
+    "Write plan document" -> "Dispatch review subagent";
+    "Dispatch review subagent" -> "Fix reported issues";
+    "Fix reported issues" -> "User reviews plan?";
     "User reviews plan?" -> "Write plan document" [label="changes requested"];
     "User reviews plan?" -> "Hand off to stoudemire" [label="approved"];
 }
@@ -177,26 +179,44 @@ Every step must contain the actual content an engineer needs. These are **plan f
 - Steps that describe what to do without showing how (code blocks required for code steps)
 - References to types, functions, or methods not defined in any task
 
-## Self-Review
+## Subagent Review
 
-After writing the plan, look at it with fresh eyes:
+After writing the plan, dispatch a subagent to review it with fresh eyes. Use the Task tool with a read-only `explore` subagent so the review is independent of the context that produced the plan.
 
-1. **Placeholder scan** — any "TBD", "TODO", incomplete sections, or vague requirements? Fix them.
+Pass the subagent the absolute path to the plan and ask it to report (not fix) any issues it finds against this checklist:
+
+1. **Placeholder scan** — any "TBD", "TODO", incomplete sections, or vague requirements?
 2. **Internal consistency** — do sections contradict each other? Does the file structure match the tasks?
 3. **Type consistency** — do types, method signatures, and property names in later tasks match earlier ones? `clearLayers()` in Task 3 but `clearFullLayers()` in Task 7 is a bug.
 4. **Scope check** — is this focused enough for one execution pass, or does it need decomposition?
-5. **Ambiguity check** — could any requirement be interpreted two ways? Pick one and make it explicit.
+5. **Ambiguity check** — could any requirement be interpreted two ways?
 6. **No commit steps** — confirm no task includes `git commit`. The human commits after execution.
 
-Fix any issues inline. No need to re-review — just fix and move on.
+Ask the subagent to return a concrete list of issues with the exact location (section/task and line) and a suggested fix for each, or to confirm the plan is clean.
+
+Example dispatch prompt:
+
+```
+Review the implementation plan at <absolute-path-to-plan>. Do NOT modify any files.
+Report every issue you find against this checklist, citing the section/task and line:
+1. Placeholders ("TBD", "TODO", vague requirements)
+2. Internal consistency (contradictions; file structure matches tasks)
+3. Type consistency (type/method/property names match across tasks)
+4. Scope (focused enough for one execution pass)
+5. Ambiguity (any requirement open to two interpretations)
+6. No commit steps (no task runs `git commit`)
+For each issue, give the location and a suggested fix. If the plan is clean, say so.
+```
+
+When the subagent returns, fix every issue it reports inline in the plan. No need to dispatch a second review — just fix and move on.
 
 ## User Review Gate
 
-After self-review, ask the user to review the plan:
+After the subagent review and your fixes, ask the user to review the plan:
 
 > "Plan written and saved to `plans/<filename>.md`. Please review it and let me know if you want to make any changes before we hand off to stoudemire."
 
-Wait for the user's response. If they request changes, make them and re-run self-review. Only proceed once approved.
+Wait for the user's response. If they request changes, make them and re-run the subagent review. Only proceed once approved.
 
 ## Handoff
 
