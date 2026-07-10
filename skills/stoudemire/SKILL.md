@@ -1,12 +1,12 @@
 ---
 name: stoudemire
-description: Executes a task-decomposed plan with a fresh implementer subagent per task and two-stage review. Use only when the user explicitly invokes stoudemire by name (for example, "use stoudemire", "/stoudemire", or "$stoudemire"). Never select this skill automatically merely because a plan exists.
+description: Executes a task-decomposed plan with a fresh implementer subagent per task and two-stage review. Use when the user explicitly invokes stoudemire, when nash has already run in the current session, or when the user asks to execute a plan identified as a nash plan. Do not select it automatically merely because a generic plan exists.
 ---
 
 # Stoudemire: Subagent-Driven Execution (No Commits)
 
 <INVOCATION-GATE>
-Use this skill only when the user explicitly invokes `stoudemire` by name. Do not infer that stoudemire should be used because a nash plan or task-decomposed plan exists, and do not invoke it automatically.
+Use this skill when the user explicitly invokes `stoudemire` by name. You may also use it when `nash` has already run in the current session or when the user asks to execute a plan explicitly identified as a nash plan. Do not infer that stoudemire should be used merely because a generic task-decomposed plan exists.
 </INVOCATION-GATE>
 
 Execute a plan by dispatching a fresh subagent per task, with two-stage review after each: spec compliance first, then code quality. **No commits happen during execution.** When all tasks are done, you hand the working tree back to the human, who reviews the full diff and commits.
