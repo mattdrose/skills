@@ -1,9 +1,13 @@
 ---
 name: chuck
-description: Use for tasks that may need brief clarification before implementation but don't warrant a full plan. Default to asking up to 3 clarifying questions one at a time before implementation unless the request is truly mechanical and unambiguous. After clarification, propose an approach, get approval, then dispatch. No plan file — lighter and faster than nash + stoudemire.
+description: Clarifies a task with up to 3 questions asked one at a time, proposes an approach, gets approval, then dispatches implementation without a plan file. Use only when the user explicitly invokes chuck by name (for example, "use chuck", "/chuck", or "$chuck"). Never select this skill automatically based on the task.
 ---
 
 # Chuck: Clarify and Implement
+
+<INVOCATION-GATE>
+Use this skill only when the user explicitly invokes `chuck` by name. Do not infer that chuck should be used from a task's scope or need for clarification, and do not invoke it automatically.
+</INVOCATION-GATE>
 
 Lightweight collaborative skill for tasks that benefit from brief clarification before implementation. No plan file — chuck is intentionally biased toward pausing for up to 3 quick questions asked one at a time, then proposing an approach, getting approval, dispatching an implementer, and dispatching a separate subagent to review the result. It should dispatch immediately only for truly mechanical, unambiguous tasks.
 

@@ -1,9 +1,13 @@
 ---
 name: nash
-description: Use before any creative work - creating features, building components, adding functionality, or modifying behavior. Brainstorms intent, requirements, and design through one-question-at-a-time dialogue, then writes a single implementation plan ready for stoudemire to execute.
+description: Brainstorms intent, requirements, and design through one-question-at-a-time dialogue, then writes a single implementation plan. Use only when the user explicitly invokes nash by name (for example, "use nash", "/nash", or "$nash"). Never select this skill automatically based on the task.
 ---
 
 # Nash: Brainstorm and Plan
+
+<INVOCATION-GATE>
+Use this skill only when the user explicitly invokes `nash` by name. Do not infer that nash should be used from the size, complexity, or creative nature of a task, and do not invoke it automatically.
+</INVOCATION-GATE>
 
 Turn an idea into a single, fully-formed implementation plan through collaborative dialogue. Nash combines brainstorming with plan-writing — one skill, one output document.
 
