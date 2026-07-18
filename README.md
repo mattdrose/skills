@@ -50,10 +50,19 @@ Flow: `chuck` → implementer runs immediately if clear; otherwise you approve t
 
 Skill: `skills/chuck/SKILL.md`
 
+## Additional skills
+
+| Skill                   | When to use                                                           |
+| ----------------------- | --------------------------------------------------------------------- |
+| `beautiful-code`        | Write, refactor, and review clear, maintainable code and architecture |
+| `pragmatic-engineering` | Apply practical discovery, delivery, debugging, and team practices    |
+
 ## Installation
 
 ```bash
 npx skills add mattdrose/skills --skill nash
 npx skills add mattdrose/skills --skill stoudemire
 npx skills add mattdrose/skills --skill chuck
+npx skills add mattdrose/skills --skill beautiful-code
+npx skills add mattdrose/skills --skill pragmatic-engineering
 ```
