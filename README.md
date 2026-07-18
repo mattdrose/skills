@@ -8,10 +8,10 @@ Skills follow the [Agent Skills](https://agentskills.io/) format.
 
 Inspired by [obra/superpowers](https://github.com/obra/superpowers). Two workflows for taking an idea to working code:
 
-| Workflow | When to use | Skills |
-|----------|-------------|--------|
-| **nash → stoudemire** | Complex tasks that need a full plan | Brainstorm, plan, then execute with reviewed subagents |
-| **chuck** | Simpler tasks that are clear or need quick clarification | Implement immediately if clear; clarify and approve if needed |
+| Workflow              | When to use                                              | Skills                                                        |
+| --------------------- | -------------------------------------------------------- | ------------------------------------------------------------- |
+| **nash → stoudemire** | Complex tasks that need a full plan                      | Brainstorm, plan, then execute with reviewed subagents        |
+| **chuck**             | Simpler tasks that are clear or need quick clarification | Implement immediately if clear; clarify and approve if needed |
 
 ---
 
@@ -20,11 +20,13 @@ Inspired by [obra/superpowers](https://github.com/obra/superpowers). Two workflo
 For complex work: multiple components, architectural decisions, or tasks that benefit from a written plan.
 
 **`nash`** brainstorms and plans:
+
 - Asks one question at a time to understand intent, constraints, and success criteria
 - Proposes 2-3 approaches with trade-offs and a recommendation
 - Writes a plan document to `plans/YYYY-MM-DD-<topic>-plan.md`
 
 **`stoudemire`** executes the plan:
+
 - Dispatches a fresh implementer subagent per task
 - Two-stage review per task: spec compliance, then code quality
 - Continuous execution — no check-ins between tasks

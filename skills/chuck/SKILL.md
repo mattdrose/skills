@@ -20,11 +20,13 @@ Do NOT start implementing until you have:
 ## When to Use
 
 Use chuck when:
+
 - The task is clear or needs brief clarification, but not a full plan
 - You could implement it in one focused session
 - It touches a handful of files with a clear scope
 
 Use nash + stoudemire instead when:
+
 - The task has multiple independent components
 - Architectural decisions have meaningful trade-offs
 - You'd need more than 3 questions to understand the requirements
@@ -72,6 +74,7 @@ digraph chuck {
 ### Phase 1: Quick Context Check
 
 Before asking questions, glance at the relevant parts of the codebase:
+
 - What files/modules are involved?
 - What patterns does the existing code use?
 - Is there anything that would change your approach?
@@ -85,6 +88,7 @@ Ask **up to 3 questions by default, one at a time**. Chuck exists because small 
 Skip clarification only when the request is truly mechanical and unambiguous, such as a precise rename, a specific one-line config change, or an exact bug fix with clear expected behavior. If you are relying on a preference, guessing between multiple reasonable UX/API choices, or assuming scope, ask.
 
 Rules:
+
 - Ask questions **one at a time**
 - One question per message — if a topic needs more exploration, break it into multiple questions
 - Prefer multiple-choice questions (easier for the user to answer quickly); open-ended is fine too
@@ -94,6 +98,7 @@ Rules:
 - Hard cap: 3 questions. If you need more, the task might be too big (see scope guard below)
 
 Good clarification targets:
+
 - Desired UX/behavior when there are multiple reasonable options
 - Scope boundaries: minimal fix vs broader cleanup, which platforms/routes/files are included
 - Compatibility or migration expectations
@@ -105,6 +110,7 @@ Good clarification targets:
 Do this phase whenever you asked clarifying questions or when your implementation depends on meaningful assumptions. If you truly skipped clarification because the task was mechanical and unambiguous, you may dispatch directly.
 
 Present **one recommended approach** in a few sentences:
+
 - What you'll build/change
 - Which files you'll touch
 - Any trade-offs or assumptions
@@ -114,6 +120,7 @@ Ask: "Does this look good?" Wait for approval before proceeding.
 ### Phase 4: Dispatch Implementer
 
 Launch a fresh subagent with:
+
 - The synthesized task description (from the request and any clarification conversation)
 - Relevant context (file paths, patterns, dependencies)
 - The no-commit rule
@@ -125,6 +132,7 @@ Use the implementer prompt template below.
 After the implementer reports DONE (or DONE_WITH_CONCERNS), launch a **separate fresh subagent** to review the work. Do not reuse the implementer subagent — a fresh reviewer with no attachment to the implementation catches more issues.
 
 Give the reviewer:
+
 - The synthesized task description and acceptance criteria
 - The diff to review (`git diff HEAD`)
 - Relevant context (file paths, patterns the code should follow)
@@ -133,12 +141,14 @@ Give the reviewer:
 Use the reviewer prompt template below.
 
 Based on the reviewer's verdict:
+
 - **APPROVED** → proceed to Handle Result
 - **CHANGES_REQUESTED** → re-dispatch the implementer with the reviewer's findings, then review again. Repeat until approved or escalate to the user if the loop isn't converging.
 
 ### Phase 6: Handle Result
 
 Based on the implementer's status:
+
 - **DONE** → run `git diff --stat HEAD`, report summary to user
 - **DONE_WITH_CONCERNS** → review concerns; if they affect correctness, address them (re-dispatch or fix directly); if observational, note and report
 - **NEEDS_CONTEXT** → provide missing context from your clarification phase, re-dispatch
@@ -147,6 +157,7 @@ Based on the implementer's status:
 ## Scope Guard
 
 If during clarification you realize the task:
+
 - Would touch 5+ files across multiple concerns
 - Requires multiple independent components
 - Needs architectural decisions with meaningful trade-offs

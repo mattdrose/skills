@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "format": "oxfmt \"**/*.md\"",
+    "format:check": "oxfmt --check \"**/*.md\""
+  },
+  "devDependencies": {
+    "oxfmt": "^0.59.0"
+  }
+}

@@ -135,6 +135,7 @@ Each task is a self-contained chunk of work with bite-sized steps (2-5 minutes e
 ### Task N: [Component Name]
 
 **Files:**
+
 - Create: `exact/path/to/file.ext`
 - Modify: `exact/path/to/existing.ext:123-145`
 - Test: `tests/exact/path/to/test.ext`
@@ -142,7 +143,7 @@ Each task is a self-contained chunk of work with bite-sized steps (2-5 minutes e
 - [ ] **Step 1: Write the failing test**
 
 ```ts
-test('specific behavior', () => {
+test("specific behavior", () => {
   const result = fn(input);
   expect(result).toBe(expected);
 });
@@ -168,6 +169,7 @@ Expected: PASS
 ````
 
 **Notes on task structure:**
+
 - No commit steps. Stoudemire and the implementer subagents will not commit. The human reviews the entire diff at the end.
 - Use TDD: failing test → run → minimal implementation → run.
 - Each task should produce changes that make sense as a single logical unit.

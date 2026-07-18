@@ -143,6 +143,7 @@ After every task is approved by both reviewers:
 ## Red Flags
 
 **Never:**
+
 - Commit, amend, stash-and-pop-with-commit, or otherwise mutate git history during execution
 - Skip reviews (spec compliance OR code quality)
 - Proceed with unfixed issues

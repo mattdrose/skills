@@ -19,19 +19,19 @@ When you need exact details, first consult `docs/SUMMARY.md`, then read the spec
 
 ### Core references
 
-| User need | Start here |
-| --- | --- |
-| What Git Town does | `docs/introduction.md` |
-| Install Git Town | `docs/install.md` |
-| Initial setup / interactive config | `docs/configuration.md`, `docs/commands/init.md` |
-| Full command list | `docs/all-commands.md` |
-| Basic workflow | `docs/basic-commands.md` |
-| Branch types and sync behavior | `docs/branch-types.md` |
-| Stacked branches / stacked changes | `docs/stacked-changes.md` |
-| Config file format | `docs/configuration-file.md` |
-| Preferences and precedence | `docs/preferences.md` |
-| Handling errors or conflicts | `docs/error-commands.md`, then `docs/commands/continue.md`, `docs/commands/skip.md`, `docs/commands/undo.md`, or `docs/commands/status.md` |
-| Practical recipes | `docs/how-tos.md` and the linked `docs/how-to/*.md` files |
+| User need                          | Start here                                                                                                                                 |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| What Git Town does                 | `docs/introduction.md`                                                                                                                     |
+| Install Git Town                   | `docs/install.md`                                                                                                                          |
+| Initial setup / interactive config | `docs/configuration.md`, `docs/commands/init.md`                                                                                           |
+| Full command list                  | `docs/all-commands.md`                                                                                                                     |
+| Basic workflow                     | `docs/basic-commands.md`                                                                                                                   |
+| Branch types and sync behavior     | `docs/branch-types.md`                                                                                                                     |
+| Stacked branches / stacked changes | `docs/stacked-changes.md`                                                                                                                  |
+| Config file format                 | `docs/configuration-file.md`                                                                                                               |
+| Preferences and precedence         | `docs/preferences.md`                                                                                                                      |
+| Handling errors or conflicts       | `docs/error-commands.md`, then `docs/commands/continue.md`, `docs/commands/skip.md`, `docs/commands/undo.md`, or `docs/commands/status.md` |
+| Practical recipes                  | `docs/how-tos.md` and the linked `docs/how-to/*.md` files                                                                                  |
 
 ### Command details
 
