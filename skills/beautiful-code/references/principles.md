@@ -1,12 +1,11 @@
 # Principles
 
-## Preserve correctness
+## API-driven design
 
-- Understand current behavior before changing structure.
-- Preserve observable behavior outside the stated scope.
-- Protect changes with tests, static checks, or direct production-shaped evidence.
-- Include required validation, migrations, error handling, security, and observability; small does not mean incomplete.
-- Separate behavior changes from structural cleanup when practical.
+- Understand how others will use the code being written.
+- Optimize the interface for readability and maintainability.
+- Protect API's with tests, static checks, or direct production-shaped evidence. Never test internals.
+- Don't be afraid to make improvements when you see the opportunity. Leave the codebase in a better place than you found it.
 - Prefer reversible steps and keep rollback paths clear.
 
 ## Optimize for understanding
@@ -17,44 +16,14 @@
 - Separate policy from mechanism and high-level decisions from incidental detail.
 - Delete dead paths, pass-through layers, stale compatibility code, and unexplained special cases.
 - Use advanced language features only when they reduce total mental work.
-- Comment non-obvious reasons, constraints, and tradeoffs; do not narrate syntax.
+- Comment non-obvious reasons, constraints, and tradeoffs; do not narrate syntax. Prefer readable code; trea comments as an escape-hatch when this isn't possible.
 
 ## Keep one authoritative source of knowledge
 
 - Represent each business rule, fact, and decision in one authoritative place.
 - Consolidate duplicated intent that must change together.
-- Do not force reuse between code that merely looks similar; unrelated concepts may evolve independently.
+- Do not force reuse between code that merely looks similar; unrelated concepts may evolve independently. Duplicating code is better than making a bad abstraction.
 - Prefer a domain operation over scattered constants and conditions when it keeps behavior consistent.
-
-### Don't
-
-```typescript
-function shippingBanner(subtotalCents: number): string {
-  return subtotalCents >= 5_000 ? "Free shipping" : "Shipping applies";
-}
-
-function shippingCents(subtotalCents: number): number {
-  return subtotalCents >= 5_000 ? 0 : 799;
-}
-```
-
-### Do
-
-```typescript
-const FREE_SHIPPING_THRESHOLD_CENTS = 5_000;
-
-function qualifiesForFreeShipping(subtotalCents: number): boolean {
-  return subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS;
-}
-
-function shippingBanner(subtotalCents: number): string {
-  return qualifiesForFreeShipping(subtotalCents) ? "Free shipping" : "Shipping applies";
-}
-
-function shippingCents(subtotalCents: number): number {
-  return qualifiesForFreeShipping(subtotalCents) ? 0 : 799;
-}
-```
 
 ## Prefer direct solutions
 
@@ -107,13 +76,28 @@ async function sendReceipt(orderId: string): Promise<void> {
 ### Do
 
 ```typescript
-interface Receipt {
-  email: string;
-  totalFormatted: string;
+interface ReceiptItem {
+  name: string;
+  amount: number;
 }
 
-async function sendReceipt(receipt: Receipt): Promise<void> {
-  await mailer.send({ to: receipt.email, message: `Total: ${receipt.totalFormatted}` });
+class Receipt(items: ReceiptItem[]) {
+  items: ReceiptItem[];
+
+  constructor(items: ReceiptItem[]) {
+    this.items = items;
+  }
+
+  get total(): string {
+    return this.items.reduce((acc, { amount }) => acc += amount, 0);
+  }
+
+  send(email: string) {
+    await mailer.send({
+      to: email,
+      message: `Total: ${formatCents(this.total)}`,
+    });
+  }
 }
 ```
 
@@ -123,7 +107,6 @@ async function sendReceipt(receipt: Receipt): Promise<void> {
 - Build a thin, production-shaped path through real boundaries to test architecture early.
 - Split work into independently useful, verifiable, reversible changes.
 - Refactor only enough to make the requested change straightforward.
-- Keep unrelated cleanup out of focused patches.
 - Test observable behavior through stable public boundaries, not implementation details.
 - Treat intuition, estimates, and passing tests as prompts for judgment, not proof.
 - Use ranges and explicit assumptions when estimating uncertain work.
@@ -133,6 +116,4 @@ async function sendReceipt(receipt: Receipt): Promise<void> {
 - Compare the result with the stated user or operator outcome.
 - Stop adding code when the verified behavior works safely.
 - Do not solve hypothetical scale, formats, consumers, or workflows.
-- Leave nearby code better only when the improvement is necessary, low-risk, and evidence-backed.
 - Delete experiments or clearly isolate disposable prototypes; never ship their shortcuts accidentally.
-- Revisit the design only when new evidence exposes another problem.

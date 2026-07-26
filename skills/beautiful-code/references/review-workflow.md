@@ -46,25 +46,6 @@
 - For shared state, identify ownership and ordering; check races, deadlocks, lost updates, duplicate work, and stale reads.
 - Do not accept a happy-path fix that can corrupt data or weaken security under failure.
 
-### Don't
-
-```typescript
-async function renameAccount(request: Request): Promise<void> {
-  const { accountId, name } = (await request.json()) as { accountId: string; name: string };
-  await db.query(`UPDATE accounts SET name = '${name}' WHERE id = '${accountId}'`);
-}
-```
-
-### Do
-
-```typescript
-async function renameAccount(request: Request, actor: User): Promise<void> {
-  const input = parseRenameAccount(await request.json());
-  await authorize(actor, "rename", input.accountId);
-  await db.query("UPDATE accounts SET name = $1 WHERE id = $2", [input.name, input.accountId]);
-}
-```
-
 ## Review tests and change safety
 
 - Require coverage of important observable behavior through stable public boundaries.
