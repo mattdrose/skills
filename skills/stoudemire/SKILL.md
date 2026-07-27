@@ -1,163 +1,156 @@
 ---
 name: stoudemire
-description: Executes a task-decomposed plan with a fresh implementer subagent per task and two-stage review. Use when the user explicitly invokes stoudemire, when nash has already run in the current session, or when the user asks to execute a plan identified as a nash plan. Do not select it automatically merely because a generic plan exists.
+description: Executes an approved plan through file-coherent milestone ownership, assigning one worker and one risk-scaled reviewer per milestone with consolidated corrections. Use when the user explicitly invokes stoudemire, when nash has already run in the current session, or when the user asks to execute a plan identified as a nash plan. Do not select it automatically merely because a generic plan exists.
 ---
 
-# Stoudemire: Subagent-Driven Execution (No Commits)
+# Stoudemire: Milestone-Owned Execution
 
 <INVOCATION-GATE>
-Use this skill when the user explicitly invokes `stoudemire` by name. You may also use it when `nash` has already run in the current session or when the user asks to execute a plan explicitly identified as a nash plan. Do not infer that stoudemire should be used merely because a generic task-decomposed plan exists.
+Use this skill when the user explicitly invokes `stoudemire`, when `nash` has already run in the current session, or when the user asks to execute a plan explicitly identified as a nash plan. Do not infer it merely from the existence of a generic plan.
 </INVOCATION-GATE>
 
-Execute a plan by dispatching a fresh subagent per task, with two-stage review after each: spec compliance first, then code quality. **No commits happen during execution.** When all tasks are done, you hand the working tree back to the human, who reviews the full diff and commits.
+Execute continuously without committing. Assign **one worker session to each milestone**, let that owner retain context across all of the milestone's work items, run focused gates, then assign **one risk-scaled reviewer**. Return all review findings to the owner in one consolidated correction round.
 
-**Why subagents:** You delegate tasks to specialized agents with isolated context. By precisely crafting their instructions and context, you ensure they stay focused and succeed. They never inherit your session's context — you construct exactly what they need. This also preserves your own context for coordination.
+Do not pause between milestones unless execution is blocked, a requirement is genuinely ambiguous, or continuing could lose user data. The human reviews and commits the final working tree.
 
-**Core principle:** Fresh subagent per task + two-stage review (spec then quality) + no commits = high quality, fast iteration, human-controlled history.
+## Cost and Dispatch Budget
 
-**Continuous execution:** Do not pause to check in with your human partner between tasks. Execute all tasks without stopping. The only reasons to stop are: BLOCKED status you cannot resolve, ambiguity that genuinely prevents progress, or all tasks complete. "Should I continue?" prompts waste their time — they asked you to execute, so execute.
+Repository orientation and subagent startup are expensive. Do not dispatch one agent per task, checkbox, test, file, or reviewer specialty.
 
-## The No-Commit Rule
+For a large four- or five-milestone integration:
 
-**Stoudemire and every subagent it dispatches MUST NOT commit.**
+- Use four or five owner sessions.
+- Use one reviewer session per milestone.
+- Resume those sessions for questions and corrections instead of creating replacements.
+- Budget approximately **12–20 total subagent dispatches**, counting resumed correction and exceptional re-review turns. The normal path still uses only 8–10 unique owner/reviewer sessions; the rest is reserve, not a quota.
+- Exceed 20 dispatches only with explicit user approval after explaining the blocker and expected value.
 
-- No `git commit` from the controller.
-- No `git commit` from any implementer subagent.
-- No `git add` followed by commit.
-- No amending existing commits.
-- No creating branches with the intent to merge.
+## No Commits
 
-The working tree accumulates all changes across all tasks. When you finish, the human gets a single, reviewable diff that they decide how to commit (one commit, many commits, squash — their choice).
+Neither the controller nor any subagent may run `git commit`, amend commits, or otherwise mutate history. Skip commit steps found in older plans. If a subagent commits, determine exactly what it created, soft-reset only those commits while preserving the working tree, and report the incident.
 
-If a plan task includes a commit step, **skip the commit step** and proceed to the next non-commit step. Note in your task report that the commit step was skipped per the no-commit rule.
+## Setup
 
-## When to Use
+Before dispatching:
 
-```dot
-digraph when_to_use {
-    "Have a plan from nash (or similar)?" [shape=diamond];
-    "Tasks mostly independent?" [shape=diamond];
-    "stoudemire" [shape=box];
-    "Manual execution or use nash to plan first" [shape=box];
+1. Read the plan once and extract its design, milestones, gates, risks, and full milestone text.
+2. Inspect `git status --short` and identify pre-existing modified and untracked files.
+3. Build one **Session Invariants** block from the plan, user statements, and known repository state.
+4. If the plan is an older task-by-task plan, group its work into four or five file-coherent milestones for a large integration. Do not rewrite the plan merely to create dispatch boundaries.
+5. Create one tracking item per milestone, not per work item.
+6. Announce the milestone count, ordering, and expected owner/reviewer sessions, then continue without asking “should I continue?”
 
-    "Have a plan from nash (or similar)?" -> "Tasks mostly independent?" [label="yes"];
-    "Have a plan from nash (or similar)?" -> "Manual execution or use nash to plan first" [label="no"];
-    "Tasks mostly independent?" -> "stoudemire" [label="yes"];
-    "Tasks mostly independent?" -> "Manual execution or use nash to plan first" [label="no - tightly coupled"];
-}
+A dirty working tree is not automatically a blocker. Preserve pre-existing work. Ask once only when unexplained state creates a real risk of overwriting or misattributing changes.
+
+## Persistent Session Invariants
+
+Copy the same invariant block **verbatim** into every owner, reviewer, correction, and exceptional escalation prompt. It must include the no-commit rule and all relevant facts, such as:
+
+```markdown
+## Session Invariants
+
+- New files are intentionally untracked. Include them in inspection; do not flag their untracked state.
+- Vendor documentation is supplied read-only. It may be consulted but never edited.
+- Preserve these pre-existing user changes: [paths].
+- Do not commit or mutate git history.
+- [Environment, compatibility, generated-file, or scope constraints.]
 ```
 
-## The Process
+Do not make later subagents rediscover these facts. Do not let reviewers report invariant-consistent state as a finding. If an invariant changes, update the canonical block once and use the new complete block thereafter.
 
-```dot
-digraph process {
-    rankdir=TB;
+## Milestone Boundaries
 
-    subgraph cluster_per_task {
-        label="Per Task";
-        "Dispatch implementer subagent (./implementer-prompt.md)" [shape=box];
-        "Implementer asks questions?" [shape=diamond];
-        "Answer questions, provide context" [shape=box];
-        "Implementer implements, tests, self-reviews (NO COMMIT)" [shape=box];
-        "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)" [shape=box];
-        "Spec reviewer confirms code matches spec?" [shape=diamond];
-        "Implementer fixes spec gaps" [shape=box];
-        "Dispatch code quality reviewer (./code-quality-reviewer-prompt.md)" [shape=box];
-        "Code quality reviewer approves?" [shape=diamond];
-        "Implementer fixes quality issues" [shape=box];
-        "Mark task complete in TodoWrite" [shape=box];
-    }
+A milestone owns a coherent integration outcome and the files or modules needed to deliver it. Its work items may contain several independently testable behaviors; they stay with one owner because they share context.
 
-    "Read plan, extract all tasks with full text, create TodoWrite" [shape=box];
-    "More tasks remain?" [shape=diamond];
-    "Hand off to human for review and commit" [shape=box style=filled fillcolor=lightgreen];
+- Group work with overlapping files or tightly coupled contracts.
+- Minimize cross-milestone file sharing. Where sharing is necessary, execute in dependency order and include the earlier handoff in the later owner's prompt.
+- Run milestones sequentially in one working tree. Never run owners in parallel when their changes may interact.
+- If a planned milestone is too broad for one retained worker context, split it into at most two coherent milestones while staying within the dispatch budget. If that would turn back into task-per-agent execution, stop and ask the user to revise the plan.
 
-    "Read plan, extract all tasks with full text, create TodoWrite" -> "Dispatch implementer subagent (./implementer-prompt.md)";
-    "Dispatch implementer subagent (./implementer-prompt.md)" -> "Implementer asks questions?";
-    "Implementer asks questions?" -> "Answer questions, provide context" [label="yes"];
-    "Answer questions, provide context" -> "Dispatch implementer subagent (./implementer-prompt.md)";
-    "Implementer asks questions?" -> "Implementer implements, tests, self-reviews (NO COMMIT)" [label="no"];
-    "Implementer implements, tests, self-reviews (NO COMMIT)" -> "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)";
-    "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)" -> "Spec reviewer confirms code matches spec?";
-    "Spec reviewer confirms code matches spec?" -> "Implementer fixes spec gaps" [label="no"];
-    "Implementer fixes spec gaps" -> "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)" [label="re-review"];
-    "Spec reviewer confirms code matches spec?" -> "Dispatch code quality reviewer (./code-quality-reviewer-prompt.md)" [label="yes"];
-    "Dispatch code quality reviewer (./code-quality-reviewer-prompt.md)" -> "Code quality reviewer approves?";
-    "Code quality reviewer approves?" -> "Implementer fixes quality issues" [label="no"];
-    "Implementer fixes quality issues" -> "Dispatch code quality reviewer (./code-quality-reviewer-prompt.md)" [label="re-review"];
-    "Code quality reviewer approves?" -> "Mark task complete in TodoWrite" [label="yes"];
-    "Mark task complete in TodoWrite" -> "More tasks remain?";
-    "More tasks remain?" -> "Dispatch implementer subagent (./implementer-prompt.md)" [label="yes"];
-    "More tasks remain?" -> "Hand off to human for review and commit" [label="no"];
-}
-```
+## Execution Loop
 
-## Setup: Read the Plan Once
+For each milestone:
 
-Before dispatching anything:
+### 1. Dispatch one owner
 
-1. Read the plan file once.
-2. Extract every task with its **full text** (don't make subagents re-read the plan).
-3. Note overall context: goal, architecture, file structure.
-4. Create a TodoWrite with one item per task.
-5. Confirm `git status` shows a clean working tree (or note any pre-existing changes the user wants kept).
+Use `./milestone-owner-prompt.md`. Give the owner:
 
-## Model Selection
+- The full milestone text, not just a summary
+- Overall architecture and dependency context
+- Exact files and cross-milestone handoffs
+- Acceptance criteria and focused gates
+- Risk classification
+- The complete Session Invariants block
 
-Use the least powerful model that can handle each role to conserve cost and increase speed.
+The owner implements all work items, tests, self-reviews, and runs every focused gate. Resume the same owner for questions, missing context, or gate failures.
 
-- **Mechanical tasks** (1-2 files, clear spec): cheap/fast model.
-- **Integration / judgment tasks** (multi-file, pattern matching, debugging): standard model.
-- **Architecture / final review**: most capable model.
+### 2. Require focused gates
 
-## Handling Implementer Status
+Do not dispatch review while a milestone gate is red. The owner fixes failures in the same session. Use the plan's focused tests, typecheck, lint, build, migration check, or integration command. Avoid the full repository suite unless the milestone explicitly requires it.
 
-Implementer subagents report one of four statuses:
+### 3. Dispatch one risk-scaled reviewer
 
-- **DONE** — proceed to spec compliance review.
-- **DONE_WITH_CONCERNS** — read concerns first. If they affect correctness/scope, address before review. If observational, note and proceed.
-- **NEEDS_CONTEXT** — provide the missing context and re-dispatch.
-- **BLOCKED** — assess: provide more context? re-dispatch with stronger model? break the task up? escalate to human?
+After gates pass, use `./milestone-reviewer-prompt.md`. One reviewer checks specification, correctness, scope, test quality, and maintainability together. Scale review depth, not reviewer count:
 
-**Never** ignore an escalation or force the same model to retry without changes.
+- **Low risk:** acceptance criteria, changed files, tests, scope, obvious regressions.
+- **Medium risk:** low-risk checks plus integration seams, compatibility, error handling, and cross-milestone interactions.
+- **High risk:** medium-risk checks plus security boundaries, authorization, data loss, migrations, concurrency, public contracts, rollback, or other named hazards.
 
-## Prompt Templates
+Reviewers inspect untracked files listed in the milestone or status; `git diff` alone does not show them.
 
-- `./implementer-prompt.md` — implementer subagent
-- `./spec-reviewer-prompt.md` — spec compliance reviewer
-- `./code-quality-reviewer-prompt.md` — code quality reviewer
+### 4. Consolidate one correction round
 
-All three templates include explicit "do not commit" instructions.
+If the reviewer requests changes:
 
-## Final Handoff
+1. Normalize its findings into one deduplicated list ordered by severity.
+2. Send the complete list in one prompt to the same milestone owner with the Session Invariants block.
+3. Ask the owner to fix all accepted findings and rerun affected focused gates.
+4. Resolve invalid or invariant-conflicting findings in the controller instead of sending them back as work.
 
-After every task is approved by both reviewers:
+Do not drip findings across several prompts and do not dispatch a new fixer.
 
-1. Run `git status` and `git diff --stat` to summarize changes.
-2. Report to the human:
+### 5. Re-review only unresolved security or correctness findings
 
-> "All N tasks complete. Working tree has uncommitted changes across [X] files. Please review the diff and commit when ready. I have not committed anything per the no-commit rule."
+After corrections and passing gates, do not perform a routine second review. Resume the same reviewer only when a specific security or correctness finding remains unresolved or the correction materially changes a security boundary or core behavior. Scope that review to the unresolved findings and affected diff.
 
-3. Do **not** commit. Do **not** suggest a commit message unless asked. The human owns the commit history.
+Do not re-review style, naming, documentation, or already resolved maintainability findings. If a second review still finds the same security or correctness issue, stop and escalate to the human rather than starting an open-ended loop.
+
+### 6. Close the milestone
+
+Record the owner status, gate results, reviewer verdict, corrections, and any accepted residual observations. Then proceed immediately to the next milestone.
+
+## Handling Owner Status
+
+- **DONE:** all focused gates pass; dispatch review.
+- **DONE_WITH_CONCERNS:** resolve correctness or scope concerns before review; carry observational concerns into reviewer context.
+- **NEEDS_CONTEXT:** answer and resume the same owner.
+- **BLOCKED:** provide context, narrow the milestone, or escalate. Create a replacement owner only if the original session is unavailable or demonstrably cannot proceed.
+
+## Final Gates and Handoff
+
+After every milestone closes:
+
+1. Run only the plan's final integration gates, if any. Fix failures with the owner whose milestone caused them; do not create a generic cleanup agent by default.
+2. Run `git status --short` and `git diff --stat`. Explicitly include intentional untracked files in the summary.
+3. Report milestones completed, gates run, reviewer corrections, residual concerns, and actual subagent sessions and dispatches against budget.
+4. Hand the uncommitted working tree to the human for review and commit.
 
 ## Red Flags
 
-**Never:**
+Never:
 
-- Commit, amend, stash-and-pop-with-commit, or otherwise mutate git history during execution
-- Skip reviews (spec compliance OR code quality)
-- Proceed with unfixed issues
-- Dispatch multiple implementer subagents in parallel (conflicts on the working tree)
-- Make a subagent read the plan file (provide full text instead)
-- Skip scene-setting context (subagent needs to understand where the task fits)
-- Ignore subagent questions (answer before letting them proceed)
-- Accept "close enough" on spec compliance
-- Start code quality review before spec compliance is ✅ (wrong order)
-- Move to the next task while either review has open issues
+- Dispatch one worker per task, checkbox, file, or test
+- Split spec, quality, security, and documentation review across separate agents for the same milestone
+- Start review before focused gates pass
+- Send reviewer findings back one at a time
+- Create a fresh fixer when the milestone owner can be resumed
+- Perform a routine second review after corrections
+- Let “new files are intentionally untracked” or another persistent invariant become a repeated finding
+- Edit read-only vendor material
+- Run overlapping milestone owners in parallel
+- Commit or mutate history
 
-**If a subagent commits anyway:** soft-reset to undo the commit while preserving the working tree changes (`git reset --soft HEAD~N`), then continue. Note the incident in the final handoff.
+## Prompt Templates
 
-## Integration
-
-- **Upstream:** `nash` produces the plan this skill executes.
-- **Downstream:** The human reviews and commits. No automated finishing skill runs.
+- `./milestone-owner-prompt.md` — one retained implementation session per milestone
+- `./milestone-reviewer-prompt.md` — one combined, risk-scaled review per milestone
