@@ -22,17 +22,14 @@ For complex work: multiple components, architectural decisions, or tasks that be
 **`nash`** brainstorms and plans:
 
 - Asks one question at a time to understand intent, constraints, and success criteria
-- Proposes real alternatives with trade-offs and a recommendation
-- Groups large integrations into four or five file-coherent milestones
-- Records persistent session invariants and focused gates in one plan document
+- Proposes 2-3 approaches with trade-offs and a recommendation
+- Writes a plan document to `plans/YYYY-MM-DD-<topic>-plan.md`
 
 **`stoudemire`** executes the plan:
 
-- Assigns one retained worker session to each milestone, not one agent per task
-- Runs focused gates, then one risk-scaled reviewer per milestone
-- Returns findings in one consolidated correction round; re-reviews only unresolved security or correctness issues
-- Budgets roughly 12–20 total subagent dispatches for large integrations, including resumed correction turns
-- Executes continuously without check-ins between milestones
+- Dispatches a fresh implementer subagent per task
+- Two-stage review per task: spec compliance, then code quality
+- Continuous execution — no check-ins between tasks
 
 Flow: `nash` → you approve the plan → `stoudemire` → you review the diff and commit
 
@@ -45,13 +42,11 @@ Skills: `skills/nash/SKILL.md` · `skills/stoudemire/SKILL.md`
 For simpler work: clear scope, handful of files, with optional quick clarification before diving in.
 
 - Asks 1-3 targeted questions (or skips if clear)
-- Frames the approved scope as one coherent milestone
-- Assigns one owner for all related work and one risk-scaled reviewer after focused gates
-- Returns review findings in one consolidated correction round
-- Carries persistent session invariants into every prompt
-- Escalates multi-milestone integrations to nash instead of splitting work per agent
+- If clear, dispatches a fresh implementer subagent immediately
+- If clarification was needed, proposes one approach and asks for approval
+- No plan file, no multi-reviewer pipeline
 
-Flow: `chuck` → one milestone owner → one reviewer → you review the diff and commit
+Flow: `chuck` → implementer runs immediately if clear; otherwise you approve the approach first → you review the diff and commit
 
 Skill: `skills/chuck/SKILL.md`
 

@@ -1,182 +1,289 @@
 ---
 name: chuck
-description: Clarifies a focused task with up to 3 questions, proposes an approach, then assigns one milestone owner and one risk-scaled reviewer without a plan file. Use only when the user explicitly invokes chuck by name (for example, "use chuck", "/chuck", or "$chuck"). Never select this skill automatically based on the task.
+description: Clarifies a task with up to 3 questions asked one at a time, proposes an approach, gets approval, then dispatches implementation without a plan file. Use only when the user explicitly invokes chuck by name (for example, "use chuck", "/chuck", or "$chuck"). Never select this skill automatically based on the task.
 ---
 
-# Chuck: Clarify and Implement One Milestone
+# Chuck: Clarify and Implement
 
 <INVOCATION-GATE>
-Use this skill only when the user explicitly invokes `chuck` by name. Do not infer it from task scope or need for clarification.
+Use this skill only when the user explicitly invokes `chuck` by name. Do not infer that chuck should be used from a task's scope or need for clarification, and do not invoke it automatically.
 </INVOCATION-GATE>
 
-Chuck is the lightweight path: clarify briefly, frame the approved scope as **one coherent milestone**, assign one worker who owns all its work, run focused gates, then assign one reviewer. There is no plan file and no task-per-agent execution.
+Lightweight collaborative skill for tasks that benefit from brief clarification before implementation. No plan file — chuck is intentionally biased toward pausing for up to 3 quick questions asked one at a time, then proposing an approach, getting approval, dispatching an implementer, and dispatching a separate subagent to review the result. It should dispatch immediately only for truly mechanical, unambiguous tasks.
 
 <HARD-GATE>
-Do not implement until necessary clarification is complete and the user has approved any meaningful assumptions or proposed approach.
+Do NOT start implementing until you have:
+1. Asked your clarifying questions (or determined none are needed)
+2. If clarification was needed: proposed an approach and received user approval to proceed
 </HARD-GATE>
 
 ## When to Use
 
-Use chuck when the request can be delivered by one owner retaining context across a coherent set of related files and behaviors.
+Use chuck when:
 
-Use nash + stoudemire when the request needs several architectural outcomes, four or five file-coherent milestones, meaningful cross-milestone handoffs, or more than three clarification questions. Do not split a large integration into a parade of chuck workers.
+- The task is clear or needs brief clarification, but not a full plan
+- You could implement it in one focused session
+- It touches a handful of files with a clear scope
+
+Use nash + stoudemire instead when:
+
+- The task has multiple independent components
+- Architectural decisions have meaningful trade-offs
+- You'd need more than 3 questions to understand the requirements
 
 ## Checklist
 
-1. **Quick context check** — inspect relevant structure and current working-tree state
-2. **Clarify** — ask up to three questions, one at a time; skip only for mechanical, unambiguous work
-3. **Approve approach** — state one recommendation and get approval when assumptions matter
-4. **Frame one milestone** — outcome, files, work, acceptance criteria, focused gates, risk, and invariants
-5. **Dispatch one owner** — the same worker handles all work items and gate failures
-6. **Dispatch one reviewer** — combined, risk-scaled review after gates pass
-7. **Consolidate corrections** — return all valid findings to the owner once
-8. **Report** — hand back an uncommitted diff
+Create a TodoWrite task for each item and complete them in order:
 
-## Clarify and Approve
+1. **Quick context check** — glance at relevant files/structure
+2. **Clarify** — ask up to 3 questions by default, one at a time; skip only when the request is truly mechanical and unambiguous
+3. **Propose approach** — present one recommendation and get approval whenever you asked questions or made meaningful assumptions
+4. **Dispatch implementer** — fresh subagent with full task context
+5. **Dispatch reviewer** — fresh subagent that reviews the implementer's work
+6. **Handle result** — report back to user
 
-Glance at relevant files, patterns, dependencies, and `git status --short`. Keep this quick.
+## Process Flow
 
-Ask up to three questions, one per message, only when the answers affect behavior, UX/API shape, compatibility, scope, or validation. Prefer multiple choice where useful. If the request is precise and mechanical, say why it is unambiguous and proceed without ceremonial questions.
+```dot
+digraph chuck {
+    "Quick context check" [shape=box];
+    "Clarification needed?" [shape=diamond];
+    "Clarify (up to 3 questions, one at a time)" [shape=box];
+    "Propose approach" [shape=box];
+    "User approves?" [shape=diamond];
+    "Dispatch implementer subagent" [shape=box];
+    "Dispatch reviewer subagent" [shape=box];
+    "Handle result" [shape=box];
+    "Report to user" [shape=doublecircle];
 
-When clarification or assumptions matter, present one recommended approach covering the outcome, likely files, validation, and trade-offs. Ask for approval before dispatching.
-
-## Milestone Fit Gate
-
-Treat the approved scope as one milestone containing multiple related work items. It fits chuck when:
-
-- One worker can retain the necessary context and deliver the integrated outcome in one session.
-- Files and modules are related enough that one owner avoids repeated repository orientation.
-- Focused tests and checks can validate the outcome.
-- The work does not require unresolved architectural choices or several independent handoffs.
-
-Do not create a worker per behavior, file, or checkbox. If the scope does not fit one coherent milestone, tell the user:
-
-> "This needs multiple milestone owners and explicit handoffs. I recommend switching to nash so we can group it into a small number of file-coherent milestones instead of paying for task-per-agent execution."
-
-Wait for the user's choice. Do not silently fragment the work.
-
-## Frame the Milestone
-
-Before dispatching, synthesize:
-
-- **Outcome:** the integrated state the owner must deliver
-- **Files:** exact create/modify paths and pre-existing files to preserve
-- **Work:** related implementation, test, fixture, documentation, or packaging items
-- **Acceptance criteria:** observable results
-- **Focused gates:** exact narrow test, typecheck, lint, build, or integration commands
-- **Risk:** Low, Medium, or High with named hazards
-- **Session Invariants:** persistent repository and user constraints
-
-Capture invariants once and copy them verbatim into every owner, reviewer, and correction prompt. Include facts such as:
-
-- `New files are intentionally untracked.`
-- `Vendor documentation is supplied read-only and must not be edited.`
-- Pre-existing user changes and files that must be preserved.
-- No commits or history mutation.
-- Environment, compatibility, generated-file, or scope constraints.
-
-A dirty tree is not automatically a blocker. Ask only if unexplained state creates overwrite or attribution risk.
-
-## Dispatch Budget
-
-Normal chuck execution uses **two subagent sessions**: one milestone owner and one reviewer. Resume them for questions and corrections. Do not create new agents to hit a quota. A second review is a resumed reviewer turn, and only for unresolved security or correctness findings.
-
-If execution appears to need more than four unique sessions, stop and recommend nash rather than allowing chuck to grow into task-per-agent orchestration.
-
-## Owner Dispatch
-
-Dispatch one worker with this structure:
-
-```text
-You own this complete milestone. Implement and validate all related work items in one
-retained context; do not delegate them to separate agents.
-
-## Outcome
-[Integrated result]
-
-## Files
-[Exact paths, including pre-existing work to preserve]
-
-## Work
-[Concrete related work items]
-
-## Acceptance Criteria
-[Observable outcomes]
-
-## Focused Gates
-[Exact commands]
-
-## Risk
-[Low/Medium/High and named hazards]
-
-## Session Invariants
-[Copy canonical block verbatim]
-
-Deliver the integrated outcome, preserve invariant-listed state, and do not commit.
-If new files are intentionally untracked, leave them that way and include them in your
-self-review. If vendor documentation is read-only, consult but never edit it.
-
-Run every focused gate and fix failures in this same session. Do not report DONE while
-a gate is red. Self-review the complete result, including untracked files.
-
-Report:
-- Status: DONE | DONE_WITH_CONCERNS | NEEDS_CONTEXT | BLOCKED
-- Outcome and acceptance criteria delivered
-- Exact gate results
-- Files changed, including untracked files
-- Concerns and confirmation that no commit occurred
+    "Quick context check" -> "Clarification needed?";
+    "Clarification needed?" -> "Dispatch implementer subagent" [label="no"];
+    "Clarification needed?" -> "Clarify (up to 3 questions, one at a time)" [label="yes"];
+    "Clarify (up to 3 questions, one at a time)" -> "Propose approach";
+    "Propose approach" -> "User approves?";
+    "User approves?" -> "Propose approach" [label="no, revise"];
+    "User approves?" -> "Dispatch implementer subagent" [label="yes"];
+    "Dispatch implementer subagent" -> "Dispatch reviewer subagent";
+    "Dispatch reviewer subagent" -> "Handle result";
+    "Handle result" -> "Report to user";
+}
 ```
 
-Resume the same owner for questions, missing context, or failed gates. Review starts only after every focused gate passes.
+## The Process
 
-## Risk-Scaled Review
+### Phase 1: Quick Context Check
 
-Dispatch one fresh reviewer with the full milestone, owner report, gate results, and canonical Session Invariants block. Tell it to inspect actual tracked and untracked files and to return one consolidated findings list without modifying anything.
+Before asking questions, glance at the relevant parts of the codebase:
 
-One reviewer covers spec, correctness, scope, tests, and quality. Scale depth rather than agent count:
+- What files/modules are involved?
+- What patterns does the existing code use?
+- Is there anything that would change your approach?
 
-- **Low:** acceptance criteria, scope, tests, obvious regressions, and code fit.
-- **Medium:** low-risk checks plus integration seams, compatibility, and failure paths.
-- **High:** medium-risk checks plus security boundaries, authorization, data loss, migrations, concurrency, public contracts, rollback, and named hazards.
+Keep this fast — 30 seconds of exploration, not 5 minutes of archaeology.
 
-The reviewer must not flag invariant-consistent state. In particular, intentional untracked files are inspected rather than reported merely for being untracked, and read-only vendor documentation is checked for unauthorized edits rather than targeted for changes.
+### Phase 2: Clarify
 
-Require this format:
+Ask **up to 3 questions by default, one at a time**. Chuck exists because small implementation tasks often hide preference decisions; a 30-second clarification is cheaper than implementing the wrong thing.
 
-```text
-- Verdict: APPROVED | CORRECTIONS_REQUIRED
-- Risk reviewed and emphasis
-- One deduplicated findings list ordered by severity
-- Each finding: category, severity, file:line, evidence, impact, concrete correction
-- Acceptance criteria and focused-gate coverage
-- Confirmation that Session Invariants were respected
+Skip clarification only when the request is truly mechanical and unambiguous, such as a precise rename, a specific one-line config change, or an exact bug fix with clear expected behavior. If you are relying on a preference, guessing between multiple reasonable UX/API choices, or assuming scope, ask.
+
+Rules:
+
+- Ask questions **one at a time**
+- One question per message — if a topic needs more exploration, break it into multiple questions
+- Prefer multiple-choice questions (easier for the user to answer quickly); open-ended is fine too
+- Ask about decisions that would change the implementation, user experience, API shape, test strategy, or scope
+- Do not ask questions whose answers would not affect your implementation
+- If you skip this phase, explicitly state why the task is unambiguous before dispatching
+- Hard cap: 3 questions. If you need more, the task might be too big (see scope guard below)
+
+Good clarification targets:
+
+- Desired UX/behavior when there are multiple reasonable options
+- Scope boundaries: minimal fix vs broader cleanup, which platforms/routes/files are included
+- Compatibility or migration expectations
+- Acceptance criteria and testing expectations
+- Naming, copy, visual treatment, or API shape when not already established
+
+### Phase 3: Propose Approach
+
+Do this phase whenever you asked clarifying questions or when your implementation depends on meaningful assumptions. If you truly skipped clarification because the task was mechanical and unambiguous, you may dispatch directly.
+
+Present **one recommended approach** in a few sentences:
+
+- What you'll build/change
+- Which files you'll touch
+- Any trade-offs or assumptions
+
+Ask: "Does this look good?" Wait for approval before proceeding.
+
+### Phase 4: Dispatch Implementer
+
+Launch a fresh subagent with:
+
+- The synthesized task description (from the request and any clarification conversation)
+- Relevant context (file paths, patterns, dependencies)
+- The no-commit rule
+
+Use the implementer prompt template below.
+
+### Phase 5: Dispatch Reviewer
+
+After the implementer reports DONE (or DONE_WITH_CONCERNS), launch a **separate fresh subagent** to review the work. Do not reuse the implementer subagent — a fresh reviewer with no attachment to the implementation catches more issues.
+
+Give the reviewer:
+
+- The synthesized task description and acceptance criteria
+- The diff to review (`git diff HEAD`)
+- Relevant context (file paths, patterns the code should follow)
+- The no-commit rule
+
+Use the reviewer prompt template below.
+
+Based on the reviewer's verdict:
+
+- **APPROVED** → proceed to Handle Result
+- **CHANGES_REQUESTED** → re-dispatch the implementer with the reviewer's findings, then review again. Repeat until approved or escalate to the user if the loop isn't converging.
+
+### Phase 6: Handle Result
+
+Based on the implementer's status:
+
+- **DONE** → run `git diff --stat HEAD`, report summary to user
+- **DONE_WITH_CONCERNS** → review concerns; if they affect correctness, address them (re-dispatch or fix directly); if observational, note and report
+- **NEEDS_CONTEXT** → provide missing context from your clarification phase, re-dispatch
+- **BLOCKED** → escalate to user with what was attempted and what's blocking
+
+## Scope Guard
+
+If during clarification you realize the task:
+
+- Would touch 5+ files across multiple concerns
+- Requires multiple independent components
+- Needs architectural decisions with meaningful trade-offs
+
+Flag it: "This seems like it might benefit from a full plan. Want me to switch to nash, or should I proceed with chuck?"
+
+Let the user decide. Don't block.
+
+## The No-Commit Rule
+
+Chuck and its implementer subagent MUST NOT commit.
+
+- No `git commit` from the controller (you).
+- No `git commit` from the implementer subagent.
+- No `git add` followed by commit.
+- No amending existing commits.
+
+The human reviews the full diff and commits when ready. If the implementer commits anyway, check `git log` to count the mistaken commits, then soft-reset to undo (`git reset --soft HEAD~N`) and note it in your report.
+
+## Implementer Prompt Template
+
+Use this when dispatching the implementer subagent:
+
+````
 ```
+Task tool (general-purpose):
+  description: "Implement: [short task name]"
+  prompt: |
+    You are implementing a task that was clarified through conversation with the user.
 
-## One Correction Round
+    ## Task
 
-If corrections are required:
+    [Synthesized task description — what to build/change, acceptance criteria,
+    files to touch. Write this fresh from the request and any clarification conversation.]
 
-1. Remove duplicate, invalid, and invariant-conflicting findings.
-2. Send the entire remaining list to the same owner in one prompt.
-3. Have the owner fix all accepted findings and rerun affected focused gates.
-4. Do not dispatch a generic fixer or drip findings across prompts.
+    ## Context
 
-Do not run a routine second review. Resume the same reviewer only if a security or correctness finding remains unresolved or the correction materially changes a security boundary or core behavior. Scope it to those findings. If they remain after that, escalate to the user instead of looping.
+    [Relevant context: file paths, existing patterns, dependencies, anything
+    the implementer needs to understand where this fits.]
 
-## No Commits and Final Report
+    ## CRITICAL: Do Not Commit
 
-Neither controller, owner, nor reviewer commits or mutates history. If an agent commits, soft-reset only its commits while preserving the working tree and tell the user.
+    You MUST NOT run `git commit`, `git add` followed by commit, `git commit --amend`,
+    or any other command that creates or mutates a commit. The human reviews and commits
+    everything at the end.
 
-At the end, run `git status --short` and `git diff --stat`, account for intentional untracked files, and report the outcome, gates, corrections, residual concerns, and uncommitted files.
+    `git add` to stage files for `git diff --staged` is fine, but never follow it with
+    a commit.
+
+    ## Before You Begin
+
+    If you have questions about the requirements, approach, or anything unclear — ask
+    them now. It's always OK to pause and clarify.
+
+    ## Your Job
+
+    1. Implement exactly what was described
+    2. Write tests if applicable
+    3. Verify implementation works (run tests, check for errors)
+    4. Do NOT commit — leave changes in the working tree
+    5. Report back
+
+    A separate reviewer subagent will review your work, so make sure the
+    implementation is complete and verifiable before reporting.
+
+    ## Report Format
+
+    - **Status:** DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
+    - What you implemented
+    - Files changed (`git diff --stat HEAD`)
+    - Test results (if applicable)
+    - Concerns or blockers (if any)
+```
+````
+
+## Reviewer Prompt Template
+
+Use this when dispatching the reviewer subagent (after the implementer reports back):
+
+````
+```
+Task tool (general-purpose):
+  description: "Review: [short task name]"
+  prompt: |
+    You are reviewing an implementation produced by another subagent. You did NOT
+    write this code, so review it critically and independently.
+
+    ## Task That Was Implemented
+
+    [Synthesized task description — what was supposed to be built/changed,
+    acceptance criteria, files that should have been touched.]
+
+    ## Context
+
+    [Relevant context: file paths, existing patterns the code should follow,
+    dependencies.]
+
+    ## What To Review
+
+    Inspect the changes with `git diff HEAD` (do not rely on a summary). Check:
+
+    **Completeness:** Was everything described actually implemented? Missing requirements?
+    **Correctness:** Does the code do what it claims? Any bugs, edge cases, or regressions?
+    **Quality:** Clean, maintainable code? Clear names? No dead code or debug leftovers?
+    **Discipline:** Only what was requested? Followed existing patterns? No scope creep?
+    **Testing:** Do tests exist where applicable and verify real behavior (not mocks)?
+
+    ## CRITICAL: Do Not Commit Or Modify
+
+    You are a reviewer. Do NOT edit files, and do NOT run `git commit`, `git add`
+    followed by commit, or `git commit --amend`. Only inspect and report.
+
+    ## Report Format
+
+    - **Verdict:** APPROVED | CHANGES_REQUESTED
+    - Summary of what the implementation does
+    - Findings, ordered by severity (blocking issues first, then nits)
+    - For each finding: file/location, what's wrong, and a suggested fix
+```
+````
 
 ## Key Principles
 
-- Brief clarification, not ceremony
-- One milestone owner, not one agent per task
-- Focused gates before one combined review
-- Risk changes review depth, not reviewer count
-- One consolidated correction round
-- Second review only for unresolved security or correctness
-- Persistent invariants in every prompt
-- Two sessions by default; no uncontrolled dispatch growth
-- Human-owned commit history
+- **Speed over ceremony** — no plan file, no multi-reviewer pipeline
+- **Clarification bias** — ask up to 3 questions by default, one at a time; skip only for truly mechanical, unambiguous work
+- **One approach when needed** — after clarification, propose your best recommendation, not a menu
+- **Fresh subagents** — isolate implementation context from clarification context, and review with a separate subagent that didn't write the code
+- **No commits** — human owns the commit history
+- **Soft scope guard** — flag when something's too big, but don't block
