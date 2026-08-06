@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Resolve and create the temporary artifact directory for one plan.
+# A plan at plans/example.md uses plans/example/.
+# Usage: workspace PLAN_FILE
+set -euo pipefail
+
+if [ "$#" -ne 1 ]; then
+  echo "usage: workspace PLAN_FILE" >&2
+  exit 2
+fi
+
+plan=$1
+[ -f "$plan" ] || { echo "no such plan file: $plan" >&2; exit 2; }
+
+plan_dir=$(cd "$(dirname "$plan")" && pwd)
+stub=$(basename "$plan" .md)
+[ -n "$stub" ] && [ "$stub" != "." ] && [ "$stub" != ".." ] \
+  || { echo "cannot derive an artifact directory from: $plan" >&2; exit 2; }
+
+workspace="$plan_dir/$stub"
+mkdir -p "$workspace"
+printf '*\n' > "$workspace/.gitignore"
+cd "$workspace" && pwd

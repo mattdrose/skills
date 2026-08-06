@@ -1,240 +1,187 @@
 ---
 name: nash
-description: Brainstorms intent, requirements, and design through one-question-at-a-time dialogue, then writes a single implementation plan. Use only when the user explicitly invokes nash by name (for example, "use nash", "/nash", or "$nash"). Never select this skill automatically based on the task.
+description: Brainstorm an idea through one-question-at-a-time dialogue, turn the approved design directly into a detailed implementation plan, and hand that plan to stoudemire. Use when the user invokes nash or asks for a collaborative design-and-planning workflow before implementation.
 ---
 
-# Nash: Brainstorm and Plan
+# Nash
 
 <INVOCATION-GATE>
 Use this skill only when the user explicitly invokes `nash` by name. Do not infer that nash should be used from the size, complexity, or creative nature of a task, and do not invoke it automatically.
 </INVOCATION-GATE>
 
-Turn an idea into a single, fully-formed implementation plan through collaborative dialogue. Nash combines brainstorming with plan-writing — one skill, one output document.
+Turn an idea into one implementation plan through collaborative dialogue. Explore the project, clarify the request, compare approaches, get design approval, and write the build-ready plan. Do not create a separate specification document.
 
 <HARD-GATE>
-Do NOT write any code, scaffold any project, or take any implementation action until you have presented a design, the user has approved it, and you have written the plan document. This applies to EVERY project regardless of perceived simplicity.
+Do not write code, scaffold a project, or take implementation action while using Nash. Finish and obtain approval for the plan first.
 </HARD-GATE>
 
 ## Output
 
-A single plan document at `plans/YYYY-MM-DD-<topic>-plan.md`. This is the only artifact — no separate spec file. The plan is what stoudemire (or a human) executes against.
+Save the only deliverable to `plans/<plan-stub>.md`, where `<plan-stub>` is a concise kebab-case name for the work. Do not add a separate spec or design document.
 
-## Checklist
+The plan must be self-contained because Stoudemire gives each implementation task to a fresh subagent with no conversation history.
 
-Create a TodoWrite task for each item and complete them in order:
+## Workflow
 
-1. **Explore project context** — check files, docs, recent commits
-2. **Ask clarifying questions** — one at a time; understand purpose, constraints, success criteria
-3. **Propose 2-3 approaches** — with trade-offs and your recommendation
-4. **Present design** — in sections scaled to complexity, get user approval
-5. **Write plan document** — save to `plans/YYYY-MM-DD-<topic>-plan.md`
-6. **Dispatch subagent to review the plan** — checks placeholders, contradictions, ambiguity, scope, type consistency; fix the issues it reports
-7. **User reviews the plan** — wait for approval before handing off
+Follow these steps in order:
 
-## Process Flow
+1. **Explore project context** — inspect relevant files, documentation, conventions, tests, and recent commits.
+2. **Assess scope** — identify whether the request must be split into independently buildable plans.
+3. **Ask clarifying questions** — ask one question per message until purpose, constraints, behavior, and success criteria are clear.
+4. **Compare approaches** — present 2-3 viable approaches with trade-offs and a recommendation.
+5. **Present the design** — explain the proposed architecture, boundaries, data flow, error handling, and testing; obtain user approval.
+6. **Write the implementation plan** — save it directly to `plans/<plan-stub>.md`.
+7. **Review the plan** — check coverage, consistency, task boundaries, exact interfaces, commands, and placeholders; fix issues inline.
+8. **Request plan approval** — ask the user to review the saved plan. Revise it until approved.
+9. **Hand off to Stoudemire** — tell the user the approved plan is ready for execution with Stoudemire.
 
-```dot
-digraph nash {
-    "Explore project context" [shape=box];
-    "Ask clarifying questions" [shape=box];
-    "Propose 2-3 approaches" [shape=box];
-    "Present design sections" [shape=box];
-    "User approves design?" [shape=diamond];
-    "Write plan document" [shape=box];
-    "Dispatch review subagent" [shape=box];
-    "Fix reported issues" [shape=box];
-    "User reviews plan?" [shape=diamond];
-    "Hand off to stoudemire" [shape=doublecircle];
+## Understand the Work
 
-    "Explore project context" -> "Ask clarifying questions";
-    "Ask clarifying questions" -> "Propose 2-3 approaches";
-    "Propose 2-3 approaches" -> "Present design sections";
-    "Present design sections" -> "User approves design?";
-    "User approves design?" -> "Present design sections" [label="no, revise"];
-    "User approves design?" -> "Write plan document" [label="yes"];
-    "Write plan document" -> "Dispatch review subagent";
-    "Dispatch review subagent" -> "Fix reported issues";
-    "Fix reported issues" -> "User reviews plan?";
-    "User reviews plan?" -> "Write plan document" [label="changes requested"];
-    "User reviews plan?" -> "Hand off to stoudemire" [label="approved"];
-}
-```
+Start from the repository rather than assumptions:
 
-## The Process
+- Follow established project structure and conventions.
+- Identify the public behavior that must change and the existing boundaries it crosses.
+- Look for project-specific testing, validation, accessibility, security, and error-handling requirements.
+- Avoid unrelated refactoring. Include a targeted cleanup only when the requested work depends on it.
 
-### Understanding the idea
+Before detailed questions, check whether the request contains independent subsystems. If each subsystem could produce useful, testable software on its own, propose separate plans and establish their order. Continue this workflow for the first plan only.
 
-- Check the current project state first (files, docs, recent commits).
-- Assess scope before drilling into details: if the request describes multiple independent subsystems (e.g., "build a platform with chat, file storage, billing, and analytics"), flag this immediately. Help the user decompose into sub-projects, then plan the first sub-project. Each sub-project gets its own plan.
-- For appropriately-scoped projects, ask questions **one at a time**.
-- Prefer multiple choice questions when possible; open-ended is fine too.
-- One question per message — if a topic needs more exploration, break it into multiple questions.
-- Focus on understanding: purpose, constraints, success criteria.
+Ask questions one at a time. Prefer multiple-choice questions when useful, but allow open-ended answers. Focus on decisions that affect implementation; do not make the user answer questions the repository already answers.
 
-### Exploring approaches
+## Compare Approaches
 
-- Propose 2-3 different approaches with trade-offs.
-- Lead with your recommended option and explain why.
-- Present conversationally, not as a wall of bullets.
+Offer 2-3 materially different approaches. Lead with the recommendation and explain why it best fits the observed codebase and constraints. Include meaningful trade-offs such as:
 
-### Presenting the design
+- consistency with existing architecture
+- implementation and migration risk
+- operational or maintenance cost
+- testability and reversibility
+- unnecessary scope
 
-- Once you understand what you're building, present the design.
-- Scale each section to its complexity: a few sentences if straightforward, up to 200-300 words if nuanced.
-- Cover: architecture, components, data flow, error handling, testing.
-- Ask after each section whether it looks right.
-- Be ready to go back and clarify if something doesn't make sense.
+Apply YAGNI: do not add flexibility, abstractions, or features without a current requirement.
 
-### Design for isolation and clarity
+## Present the Design
 
-- Break the system into smaller units that each have one clear purpose, communicate through well-defined interfaces, and can be understood and tested independently.
-- For each unit, you should be able to answer: what does it do, how do you use it, what does it depend on?
-- Smaller, well-bounded units are easier to reason about and easier to edit reliably. Large files are usually a signal of doing too much.
+Scale the design to the task. A small change may need a few paragraphs; a nuanced feature may need several short sections. Cover only applicable topics:
 
-### Working in existing codebases
+- user-visible behavior and success criteria
+- architecture and component responsibilities
+- interfaces and data flow
+- validation, failures, and recovery
+- compatibility or migration concerns
+- testing strategy
 
-- Explore the current structure before proposing changes. Follow existing patterns.
-- Where existing code has problems that affect the work, include targeted improvements as part of the plan — the way a good developer improves code they're working in.
-- Don't propose unrelated refactoring. Stay focused on the current goal.
+Present the design in digestible sections and ask whether each section is right before moving on. Resolve feedback before writing the plan.
 
-## Writing the Plan
+## Write the Plan
 
-After the user approves the design, write a single plan document at `plans/YYYY-MM-DD-<topic>-plan.md`.
+Announce: “I’m using Nash to write the implementation plan.”
 
-### Plan Header
+Map the files before defining tasks. Each file should have one clear responsibility, and each task should end in an independently testable deliverable that a reviewer could approve or reject on its own. Fold setup, configuration, and documentation into the task whose deliverable needs them.
 
-Every plan MUST start with this header:
+Use exact repository-relative paths. Include line ranges when they are stable and useful. Define interfaces explicitly so tasks can be implemented independently.
+
+### Required header
+
+Every plan starts with:
 
 ```markdown
-# [Feature Name] Plan
+# [Feature Name] Implementation Plan
 
-> **For agentic workers:** Use the `stoudemire` skill to execute this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. **Do not commit during execution** — the human reviews and commits all work after stoudemire is done.
+> **Executor:** Build this plan task-by-task with Stoudemire. Each task is handed to a fresh implementer, so every task must be self-contained. Track progress with the task checkboxes.
 
-**Goal:** [One sentence describing what this builds]
+**Goal:** [One sentence describing the outcome]
 
-**Architecture:** [2-3 sentences about the approach]
+**Architecture:** [Two or three sentences describing the approach]
 
-**Tech Stack:** [Key technologies/libraries]
+**Tech Stack:** [Relevant technologies and libraries]
 
-## Design
+## Global Constraints
 
-[The validated design from brainstorming. Include architecture, components, data flow, error handling, testing strategy. This replaces a separate spec — the design lives inside the plan.]
-
-## File Structure
-
-[Map of files to create/modify and what each is responsible for. This locks in the decomposition.]
+- [Exact project-wide requirement]
+- [Exact compatibility, dependency, naming, or behavioral constraint]
 
 ---
 ```
 
-### Task Structure
+Do not invent global constraints merely to fill the section. Write `None beyond existing project conventions.` when there are none.
 
-Each task is a self-contained chunk of work with bite-sized steps (2-5 minutes each). **Do not include commit steps** — the human commits after the entire plan is executed.
+### Task structure
 
 ````markdown
-### Task N: [Component Name]
+### Task N: [Testable deliverable]
 
 **Files:**
 
-- Create: `exact/path/to/file.ext`
-- Modify: `exact/path/to/existing.ext:123-145`
-- Test: `tests/exact/path/to/test.ext`
+- Create: `exact/path/to/file`
+- Modify: `exact/path/to/existing-file:line-range`
+- Test: `exact/path/to/integration-test`
 
-- [ ] **Step 1: Write the failing test**
+**Interfaces:**
 
-```ts
-test("specific behavior", () => {
-  const result = fn(input);
-  expect(result).toBe(expected);
-});
+- Consumes: [existing or earlier-task interfaces with exact signatures]
+- Produces: [new interfaces with exact signatures and behavior]
+
+- [ ] **Step 1: Add the failing behavior test**
+
+```language
+[Complete test code or an exact patch-sized excerpt]
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [ ] **Step 2: Run the focused test and verify the expected failure**
 
-Run: `npm test -- tests/path/test.ts`
-Expected: FAIL with "fn is not defined"
+Run: `[exact command]`
+Expected: `[specific failure showing the behavior is missing]`
 
-- [ ] **Step 3: Write minimal implementation**
+- [ ] **Step 3: Implement the behavior**
 
-```ts
-export function fn(input: string) {
-  return expected;
-}
+```language
+[Complete implementation or an exact patch-sized excerpt]
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [ ] **Step 4: Run verification**
 
-Run: `npm test -- tests/path/test.ts`
-Expected: PASS
+Run: `[exact focused and relevant integration commands]`
+Expected: `[specific passing result]`
+
+- [ ] **Step 5: Commit the task**
+
+```bash
+git add [exact paths]
+git commit -m "[specific commit subject]"
+```
 ````
 
-**Notes on task structure:**
+Adapt the test-first sequence when the repository’s testing policy or the nature of the task requires another form of verification. Preserve the same standard: name the observable behavior, exact command, and expected result.
 
-- No commit steps. Stoudemire and the implementer subagents will not commit. The human reviews the entire diff at the end.
-- Use TDD: failing test → run → minimal implementation → run.
-- Each task should produce changes that make sense as a single logical unit.
+## Plan Quality Rules
 
-### No Placeholders
+Write for a skilled engineer who knows neither this codebase nor the conversation.
 
-Every step must contain the actual content an engineer needs. These are **plan failures** — never write them:
+- Include actual code or precise patch-sized excerpts for code-writing steps.
+- Define types, functions, commands, values, and expected outputs exactly.
+- Repeat task-local facts instead of referring vaguely to another task.
+- Keep neighboring task interfaces consistent.
+- Respect the repository’s existing architecture and testing policy.
+- Keep tasks small enough for focused implementation and review, but do not split mechanical setup from the feature that needs it.
+- Include validation at trust boundaries, relevant failure handling, security measures, accessibility basics, and data-loss prevention.
 
-- "TBD", "TODO", "implement later", "fill in details"
-- "Add appropriate error handling" / "add validation" / "handle edge cases"
-- "Write tests for the above" (without actual test code)
-- "Similar to Task N" (repeat the code — the engineer may read tasks out of order)
-- Steps that describe what to do without showing how (code blocks required for code steps)
-- References to types, functions, or methods not defined in any task
+Never write placeholders such as `TBD`, `TODO`, “implement later,” “add appropriate error handling,” “write tests for the above,” or “similar to Task N.”
 
-## Subagent Review
+## Self-Review
 
-After writing the plan, dispatch a subagent to review it with fresh eyes. Use the Task tool with a read-only `explore` subagent so the review is independent of the context that produced the plan.
+After saving the plan, review it with fresh eyes:
 
-Pass the subagent the absolute path to the plan and ask it to report (not fix) any issues it finds against this checklist:
+1. **Requirement coverage:** Every approved requirement maps to at least one task.
+2. **Scope:** The plan produces one coherent, independently useful outcome.
+3. **Buildability:** Every step contains enough detail to execute without conversation history.
+4. **Consistency:** Paths, names, values, signatures, and task-to-task interfaces agree.
+5. **Verification:** Tasks test observable behavior using exact commands and expected results.
+6. **Placeholder scan:** Remove vague instructions and unfinished content.
+7. **Stoudemire readiness:** Tasks have clear boundaries, checkboxes, and no hidden dependencies.
 
-1. **Placeholder scan** — any "TBD", "TODO", incomplete sections, or vague requirements?
-2. **Internal consistency** — do sections contradict each other? Does the file structure match the tasks?
-3. **Type consistency** — do types, method signatures, and property names in later tasks match earlier ones? `clearLayers()` in Task 3 but `clearFullLayers()` in Task 7 is a bug.
-4. **Scope check** — is this focused enough for one execution pass, or does it need decomposition?
-5. **Ambiguity check** — could any requirement be interpreted two ways?
-6. **No commit steps** — confirm no task includes `git commit`. The human commits after execution.
+Fix issues inline, then tell the user:
 
-Ask the subagent to return a concrete list of issues with the exact location (section/task and line) and a suggested fix for each, or to confirm the plan is clean.
+> Plan complete and saved to `plans/<plan-stub>.md`. Please review it and let me know what you want changed. Once approved, Stoudemire can build it task-by-task.
 
-Example dispatch prompt:
-
-```
-Review the implementation plan at <absolute-path-to-plan>. Do NOT modify any files.
-Report every issue you find against this checklist, citing the section/task and line:
-1. Placeholders ("TBD", "TODO", vague requirements)
-2. Internal consistency (contradictions; file structure matches tasks)
-3. Type consistency (type/method/property names match across tasks)
-4. Scope (focused enough for one execution pass)
-5. Ambiguity (any requirement open to two interpretations)
-6. No commit steps (no task runs `git commit`)
-For each issue, give the location and a suggested fix. If the plan is clean, say so.
-```
-
-When the subagent returns, fix every issue it reports inline in the plan. No need to dispatch a second review — just fix and move on.
-
-## User Review Gate
-
-After the subagent review and your fixes, ask the user to review the plan:
-
-> "Plan written and saved to `plans/<filename>.md`. Please review it and let me know if you want to make any changes before we hand off to stoudemire."
-
-Wait for the user's response. If they request changes, make them and re-run the subagent review. Only proceed once approved.
-
-## Handoff
-
-Once the plan is approved, offer the next step:
-
-> "Plan approved. Ready to execute? Use the `stoudemire` skill to dispatch implementer subagents per task. Stoudemire will not commit — you'll review the full diff at the end."
-
-## Key Principles
-
-- **One question at a time** — don't overwhelm
-- **Multiple choice preferred** — easier than open-ended when possible
-- **YAGNI ruthlessly** — remove unnecessary features
-- **Explore alternatives** — propose 2-3 approaches before settling
-- **Single output** — one plan file, no separate spec
-- **No commits in the plan** — the human reviews and commits after execution
+Wait for approval. Do not begin implementation from Nash.

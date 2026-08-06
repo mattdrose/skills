@@ -23,15 +23,17 @@ For complex work: multiple components, architectural decisions, or tasks that be
 
 - Asks one question at a time to understand intent, constraints, and success criteria
 - Proposes 2-3 approaches with trade-offs and a recommendation
-- Writes a plan document to `plans/YYYY-MM-DD-<topic>-plan.md`
+- Writes the build-ready plan directly to `plans/<plan-stub>.md` (no separate spec)
 
 **`stoudemire`** executes the plan:
 
 - Dispatches a fresh implementer subagent per task
-- Two-stage review per task: spec compliance, then code quality
+- Reviews requirement compliance and code quality after every task
+- Commits each completed task and runs a broad final review
+- Keeps temporary build artifacts in `plans/<plan-stub>/` during execution
 - Continuous execution — no check-ins between tasks
 
-Flow: `nash` → you approve the plan → `stoudemire` → you review the diff and commit
+Flow: `nash` → you approve the plan → `stoudemire` → reviewed task commits
 
 Skills: `skills/nash/SKILL.md` · `skills/stoudemire/SKILL.md`
 
