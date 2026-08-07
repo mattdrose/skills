@@ -9,7 +9,7 @@ description: Brainstorm an idea through one-question-at-a-time dialogue, turn th
 Use this skill only when the user explicitly invokes `nash` by name. Do not infer that nash should be used from the size, complexity, or creative nature of a task, and do not invoke it automatically.
 </INVOCATION-GATE>
 
-Turn an idea into one implementation plan through collaborative dialogue. Explore the project, clarify the request, compare approaches, get design approval, and write the build-ready plan. Do not create a separate specification document.
+Turn an idea into one implementation plan through collaborative dialogue. Explore the project, clarify the request, compare approaches, get design approval, and write the build-ready plan.
 
 <HARD-GATE>
 Do not write code, scaffold a project, or take implementation action while using Nash. Finish and obtain approval for the plan first.
@@ -87,8 +87,6 @@ Every plan starts with:
 
 ```markdown
 # [Feature Name] Implementation Plan
-
-> **Executor:** Build this plan task-by-task with Stoudemire. Each task is handed to a fresh implementer, so every task must be self-contained. Track progress with the task checkboxes.
 
 **Goal:** [One sentence describing the outcome]
 

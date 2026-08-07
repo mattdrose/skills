@@ -29,7 +29,7 @@ Subagent (reviewer):
     This is the broad integration review. Check:
 
     - every plan requirement and Global Constraint is implemented
-    - task outputs integrate through the exact interfaces the plan defines
+    - task outputs integrate through the interfaces the plan defines
     - behavior is correct across task boundaries
     - validation, error handling, security, accessibility, and data safety are
       present where the plan or changed boundary requires them

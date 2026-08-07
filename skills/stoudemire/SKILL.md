@@ -9,9 +9,9 @@ description: Execute a Nash implementation plan in the current session with a fr
 Use this skill when the user explicitly invokes `stoudemire` by name. You may also use it when `nash` has already run in the current session or when the user asks to execute a plan explicitly identified as a nash plan. Do not infer that stoudemire should be used merely because a generic task-decomposed plan exists.
 </INVOCATION-GATE>
 
-Execute a Nash plan by dispatching a fresh implementer for each task, reviewing each task for requirement compliance and code quality, and running one broad review after all tasks.
+Execute a Nash plan by dispatching a fresh implementer for each task.
 
-**Core principle:** Fresh implementer per task + task review + final review = focused execution with independent quality gates.
+**Core principle:** Fresh implementer per task = focused execution with independent quality gates.
 
 **Narration:** Between tool calls, narrate at most one short line. The progress ledger and artifact files carry the detailed record.
 
@@ -19,9 +19,9 @@ Execute a Nash plan by dispatching a fresh implementer for each task, reviewing 
 
 ## Preconditions
 
-Stoudemire needs a task-decomposed plan, normally `plans/<plan-stub>.md`, whose tasks are sufficiently independent for fresh subagents. If no suitable plan exists, ask the user to run Nash or provide one. If tasks are tightly coupled and cannot be handed off independently, explain why Stoudemire is not a good fit.
+Stoudemire needs a task-decomposed plan, normally `plans/<plan-stub>.md`, whose tasks are sufficiently independent for subagents. If no suitable plan exists, ask the user to run Nash or provide one. If tasks are tightly coupled and cannot be handed off independently, explain why Stoudemire is not a good fit.
 
-Work in the current checkout. Do not require or create a worktree. Before implementation:
+Work in the current checkout. Before implementation:
 
 - inspect `git status` and the current branch
 - preserve unrelated user changes
@@ -39,7 +39,7 @@ The workspace contains:
 - `task-N-report.md` — implementer and fix reports
 - `review-<base>..<head>.diff` — task and final review packages
 
-The directory is git-ignored by its own `.gitignore`. Delete this plan’s workspace after a clean final review. Never read, change, or delete another plan’s workspace.
+The directory is git-ignored by its own `.gitignore`. Delete this plan’s workspace after finishing the plan. Never read, change, or delete another plan’s workspace.
 
 Conversation memory may not survive compaction, so the ledger is authoritative:
 
@@ -105,10 +105,9 @@ The implementer returns one status:
 
 - **DONE:** Generate a review package and dispatch task review.
 - **DONE_WITH_CONCERNS:** Read the concerns. Resolve correctness or scope doubts before review; ledger non-blocking observations.
-- **NEEDS_CONTEXT:** Supply the missing context and continue the same task.
-- **BLOCKED:** Change something meaningful—provide context, use a stronger implementer, split the task, or ask the user about a defective plan.
+- **BLOCKED:** Try to unblock them. If you absolutely need to ask the user about a defective plan.
 
-Never ignore a blocker or repeat the same dispatch unchanged.
+Never repeat the same dispatch unchanged.
 
 For DONE, run:
 
@@ -118,62 +117,7 @@ For DONE, run:
 
 Use the recorded task base, never `HEAD~1`; a task may create multiple commits.
 
-### 4. Review the task
-
-Dispatch a fresh reviewer with [task-reviewer-prompt.md](task-reviewer-prompt.md). Provide:
-
-- the task brief path
-- Global Constraints copied exactly from the plan
-- the implementer report path
-- base and head commits
-- the generated review package path
-
-The reviewer returns separate requirement-compliance and task-quality verdicts. Do not skip review, substitute implementer self-review, or ask the reviewer to rubber-stamp plan-mandated defects.
-
-Resolve `Cannot verify from diff` items yourself using the plan and completed-task context. A confirmed gap enters the fix loop.
-
-Minor findings do not enter the fix loop. Append each to the ledger as:
-
-`Task <N>: minor (deferred): <one-line finding>`
-
-The final reviewer will triage them.
-
-If a finding conflicts with explicit plan text, ask the user which governs before changing code.
-
-### 5. Fix loop
-
-Enter the fix loop for requirement failures and Critical or Important findings. Allow at most five rounds per task.
-
-- **Rounds 1-3:** Resume the original implementer when supported. Otherwise dispatch a fresh implementer with the brief, report, and open findings.
-- **Rounds 4-5:** Dispatch a fresh, more capable implementer. Explain that prior attempts did not resolve the findings and that the report records what was tried.
-
-For every round:
-
-1. Send the open findings verbatim.
-2. Require the implementer to fix only those findings, run focused covering tests, commit the fix, and append evidence to the same report.
-3. Record `FIX_BASE`, the commit the previous reviewer saw.
-4. Generate `review-package PLAN_FILE FIX_BASE HEAD`.
-5. Dispatch [re-review-prompt.md](re-review-prompt.md) with the findings, brief, report, and fix-only review package.
-6. Add new Critical or Important breakage in the fix diff to the open findings.
-7. Ledger out-of-scope observations as deferred minors.
-8. Append:
-   `Task <N>: fix round <R>/5 (<X> addressed, <Y> open; commits <base7>..<head7>)`
-
-Do not fix findings in the controller session. Controller edits bypass the implementer report and independent review.
-
-After round 5, adjudicate each residual finding:
-
-- **Reviewer is wrong or the issue is contestable:** park it with a written ruling.
-- **Real but not load-bearing:** park it as a known deferred issue with a written ruling.
-- **Real and load-bearing for later tasks or caused by a plan defect:** append a BLOCKED entry and stop for the user.
-
-Use:
-
-`Task <N>: parked — <finding> — ruling: <why execution can continue>`
-
-Do not silently discard findings or adjudicate before the cap merely to end the loop.
-
-### 6. Complete the task
+### 4. Complete the task
 
 When review is clean, or all residual findings are parked after the cap, append one completion entry:
 
@@ -199,14 +143,7 @@ Dispatch the strongest suitable reviewer with [final-reviewer-prompt.md](final-r
 
 Point it to deferred-minor and parked entries so it can decide whether any block completion.
 
-If final review finds Critical or Important issues:
-
-1. Dispatch one implementer with the complete findings list.
-2. Require focused tests, commits, and a report appended to `final-fix-report.md` in the workspace.
-3. Generate one fix-only review package.
-4. Dispatch one scoped re-review with [re-review-prompt.md](re-review-prompt.md).
-5. Adjudicate residuals as in the task breaker. Do not run a second final fix wave.
-6. Stop for the user if any residual issue is load-bearing.
+If final review finds Critical or Important issues: Dispatch one implementer with the complete findings list.
 
 ## Finish
 
@@ -216,14 +153,3 @@ After final review is clean:
 2. Delete only this plan’s temporary workspace: `rm -rf plans/<plan-stub>/`.
 3. Report the implemented plan, commit range, tests run, final-review result, and any parked non-blocking findings.
 4. Leave branch integration, merge, push, or pull-request decisions to the user unless they explicitly requested them.
-
-## Guardrails
-
-| Temptation                            | Required response                                             |
-| ------------------------------------- | ------------------------------------------------------------- |
-| “The implementation is close enough.” | Requirement gaps enter the fix loop.                          |
-| “I can fix this faster myself.”       | Dispatch the implementer so the fix is reported and reviewed. |
-| “One more round will work.”           | Stop at five rounds and adjudicate.                           |
-| “The fix is tiny, so skip re-review.” | Every fix round receives a scoped re-review.                  |
-| “The ledger is overhead.”             | The ledger prevents duplicate work after context loss.        |
-| “I should ask whether to continue.”   | Continue automatically unless genuinely blocked.              |
